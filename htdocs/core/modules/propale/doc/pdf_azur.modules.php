@@ -1531,6 +1531,21 @@ class pdf_azur extends ModelePDFPropales
 		}
 
 		// Get contact
+						
+		if ($idcommercial)
+		{
+			$idcommercial = $idcommercial[0];
+		}
+		else
+		{
+			$sql = "SELECT * FROM ".MAIN_DB_PREFIX."societe_commerciaux";
+			$sql.= " WHERE fk_soc = ".$object->thirdparty->id;
+			$sql.= " ORDER BY rowid";
+			$resql = $this->db->query($sql);
+			$row = $this->db->fetch_row($resql);
+			$idcommercial = $row[2];
+		}
+
 		if (!empty($conf->global->DOC_SHOW_FIRST_SALES_REP)) {
 			$arrayidcontact = $object->getIdContact('internal', 'SALESREPFOLL');
 			if (count($arrayidcontact) > 0) {
@@ -1540,6 +1555,40 @@ class pdf_azur extends ModelePDFPropales
 				$pdf->SetXY($posx, $posy);
 				$pdf->SetTextColor(0, 0, 60);
 				$pdf->MultiCell(100, 3, $langs->trans("SalesRepresentative")." : ".$usertmp->getFullName($langs), '', 'R');
+			} else {
+				$sql = "SELECT * FROM ".MAIN_DB_PREFIX."societe_commerciaux";
+				$sql.= " WHERE fk_soc = ".$object->thirdparty->id;
+				$sql.= " ORDER BY rowid";
+				$resql = $this->db->query($sql);
+				$row = $this->db->fetch_row($resql);
+				$idcommercial = $row[2];
+				$posy += 4;
+				$pdf->SetXY($posx, $posy);
+				$pdf->SetTextColor(0, 0, 60);
+				$pdf->MultiCell(100, 3, $langs->trans("SalesRepresentative")." : ".$usertmp->getFullName($langs), '', 'R');
+			}
+		}
+
+		// GM_Affiche adresse agence
+
+		if (!empty($conf->global->DOC_SHOW_FIRST_SALES_REP))
+		{
+			$arrayidcontact=$object->getIdContact('internal','SALESREPFOLL');
+			if ($idcommercial > 0)
+			{
+				$usertmp=new User($this->db);
+				$entrepotuser = new Entrepot($this->db);
+				$usertmp->fetch($idcommercial);
+				$entrepotuser->fetch($usertmp->fk_warehouse);
+				$posy = $pdf->getY() + 8;
+				$pdf->SetXY($posx, $posy);
+				$pdf->SetFont('Times','B',$default_font_size+1);
+				$pdf->SetTextColor(0,0,0);
+				$pdf->MultiCell(80, '',"Votre agence:", '', 'L');
+				$posy = $pdf->getY() + 2;
+				$pdf->SetXY($posx, $posy);
+				$pdf->SetFont('Times','',$default_font_size+1);
+				$pdf->MultiCell(80, 10,"GEST-MAG"."\n".$entrepotuser->address."\n".$entrepotuser->zip." ".$entrepotuser->town."\n"."Tel: ".$entrepotuser->phone, '', 'L');
 			}
 		}
 
