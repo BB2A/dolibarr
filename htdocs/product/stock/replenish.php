@@ -628,7 +628,7 @@ if (empty($reshook)) {
 }
 
 print '<div class="inline-block valignmiddle">';
-print '<input type="submit" class="button" name="valid" value="'.$langs->trans('ToFilter').'">';
+print '<input type="submit" class="button small" name="valid" value="'.$langs->trans('ToFilter').'">';
 print '</div>';
 
 print '</form>';
