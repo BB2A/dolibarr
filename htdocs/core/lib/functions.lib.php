@@ -6610,7 +6610,7 @@ function dol_mkdir($dir, $dataroot = '', $newmask = null)
 				dol_syslog("functions.lib::dol_mkdir: Directory '".$ccdir."' does not exists or is outside open_basedir PHP setting.", LOG_DEBUG);
 
 				umask(0);
-				$dirmaskdec = octdec($newmask);
+				$dirmaskdec = octdec((string) $newmask);
 				if (empty($newmask)) {
 					$dirmaskdec = empty($conf->global->MAIN_UMASK) ? octdec('0755') : octdec($conf->global->MAIN_UMASK);
 				}
