@@ -766,6 +766,9 @@ if ($resql) {
 	}
 	$newcardbutton .= dolGetButtonTitle($langs->trans($label), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/product/card.php?action=create&type='.$type, '', $perm, $params);
 
+	$params['forcenohideoftext'] = 0;
+	$newcardbutton .= dolGetButtonTitle($langs->trans('Download'), $langs->trans('HelDownloadlist'), 'fa fa-file-pdf', $_SERVER["PHP_SELF"].'?action=GenerateDocumentList&type='.$type, '', 1, $params);
+
 	$type = $oldtype;
 
 	print '<form action="'.$_SERVER["PHP_SELF"].'" method="post" name="formulaire">';
