@@ -1900,7 +1900,7 @@ if ($resql) {
 			if (!$i) {
 				$totalarray['pos'][$totalarray['nbfield']] = 'p.total_ht';
 			}
-			$totalarray['val']['p.total_ht'] += $obj->total_ht;
+			isset($totalarray['val']['p.total_ht'])?$totalarray['val']['p.total_ht'] += $obj->total_ht:$totalarray['val']['p.total_ht'] = $obj->total_ht;
 		}
 		// Amount VAT
 		if (!empty($arrayfields['p.total_tva']['checked'])) {
