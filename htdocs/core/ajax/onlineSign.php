@@ -166,8 +166,13 @@ if ($action == "importSignature") {
 						$xforimgstart = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
 						$yforimgstart = (empty($s['h']) ? 240 : $s['h'] - 60);
 						$wforimg = $s['w'] - 20 - $xforimgstart;
+						if ($mode == 'proposal') {
+							$xforimgstart = $s['w'] - 130;
+							$yforimgstart = $s['h'] - 30;
+							//$wforimg = $s['w'] - $xforimgstart + 10;
+						}
 
-						$pdf->Image($upload_dir.$filename, $xforimgstart, $yforimgstart, $wforimg, round($wforimg / 4));
+						$pdf->Image($upload_dir.$filename, $xforimgstart, $yforimgstart, $wforimg, round($wforimg / 5));
 						//$pdf->Close();
 						$pdf->Output($newpdffilename, "F");
 
