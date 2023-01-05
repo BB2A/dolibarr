@@ -140,10 +140,10 @@ var searchBox = new SearchBox("searchBox", "../../search",false,'Search','.html'
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;include DOL_DOCUMENT_ROOT.<span class="stringliteral">&#39;/core/actions_setmoduleoptions.inc.php&#39;</span>;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordflow">if</span> ($action == <span class="stringliteral">&#39;updateMaskLot&#39;</span>) {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  $maskconstbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskconstLot&#39;</span>, <span class="stringliteral">&#39;alpha&#39;</span>);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  $maskconstbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskconstLot&#39;</span>, <span class="stringliteral">&#39;aZ09&#39;</span>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  $maskbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskLot&#39;</span>, <span class="stringliteral">&#39;alpha&#39;</span>);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordflow">if</span> ($maskconstbatch) {</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordflow">if</span> ($maskconstbatch &amp;&amp; preg_match(<span class="stringliteral">&#39;/_MASK$/&#39;</span>, $maskconstbatch)) {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    $res = <a class="code" href="../../da/d0f/admin_8lib_8php.html#a2672fdb5a58c6d4ebe00ba25c9ca9ce9">dolibarr_set_const</a>($db, $maskconstbatch, $maskbatch, <span class="stringliteral">&#39;chaine&#39;</span>, 0, <span class="stringliteral">&#39;&#39;</span>, $conf-&gt;entity);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> ($res &lt;= 0) $error++;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  }</div>
@@ -154,10 +154,10 @@ var searchBox = new SearchBox("searchBox", "../../search",false,'Search','.html'
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <a class="code" href="../../d9/d69/functions_8lib_8php.html#a4a25c44d5cda2ec236161511fadde188">setEventMessages</a>($langs-&gt;trans(<span class="stringliteral">&quot;Error&quot;</span>), <span class="keyword">null</span>, <span class="stringliteral">&#39;errors&#39;</span>);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  }</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;} elseif ($action == <span class="stringliteral">&#39;updateMaskSN&#39;</span>) {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  $maskconstbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskconstSN&#39;</span>, <span class="stringliteral">&#39;alpha&#39;</span>);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  $maskconstbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskconstSN&#39;</span>, <span class="stringliteral">&#39;aZ09&#39;</span>);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  $maskbatch = <a class="code" href="../../d9/d69/functions_8lib_8php.html#a97dc8c4d4db97a060f48e220a1f9f293">GETPOST</a>(<span class="stringliteral">&#39;maskSN&#39;</span>, <span class="stringliteral">&#39;alpha&#39;</span>);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordflow">if</span> ($maskconstbatch) {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordflow">if</span> ($maskconstbatch &amp;&amp; preg_match(<span class="stringliteral">&#39;/_MASK$/&#39;</span>, $maskconstbatch)) {</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    $res = <a class="code" href="../../da/d0f/admin_8lib_8php.html#a2672fdb5a58c6d4ebe00ba25c9ca9ce9">dolibarr_set_const</a>($db, $maskconstbatch, $maskbatch, <span class="stringliteral">&#39;chaine&#39;</span>, 0, <span class="stringliteral">&#39;&#39;</span>, $conf-&gt;entity);</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">if</span> ($res &lt;= 0) $error++;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  }</div>
@@ -418,7 +418,7 @@ var searchBox = new SearchBox("searchBox", "../../search",false,'Search','.html'
 File added into doxygen generated documentation
 -->
 <hr class="footer" />
-<address class="footer"><small>Generated on Wed Jan 4 2023 15:11:04 for <a href="https://www.dolibarr.org" title="ERP and CRM open source software">dolibarr</a> by Doxygen 1.9.1 </small></address>
+<address class="footer"><small>Generated on Thu Jan 5 2023 15:10:25 for <a href="https://www.dolibarr.org" title="ERP and CRM open source software">dolibarr</a> by Doxygen 1.9.1 </small></address>
 <br>
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-9049390-16"></script>
