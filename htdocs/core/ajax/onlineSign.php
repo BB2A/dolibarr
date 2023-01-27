@@ -163,11 +163,13 @@ if ($action == "importSignature") {
 
 						// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
 						// TODO Get position of box from PDF template
+						$xysign = $pdf->getSignatureAppearanceArray();
+						$xysign = explode(' ',$xysign);
 						$xforimgstart = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
 						$yforimgstart = (empty($s['h']) ? 240 : $s['h'] - 60);
 						$wforimg = $s['w'] - 20 - $xforimgstart;
 
-						$pdf->Image($upload_dir.$filename, $xforimgstart, $yforimgstart, $wforimg, round($wforimg / 4));
+						$pdf->Image($upload_dir.$filename, $xysign[0], $xysign[1], $wforimg, round($wforimg / 4));
 						//$pdf->Close();
 						$pdf->Output($newpdffilename, "F");
 
