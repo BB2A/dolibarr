@@ -512,6 +512,7 @@ print $hookmanager->resPrint;
 print "</tr>\n";
 
 $totalbuyingprice = 0;
+$totalsellingprice = 0;
 $totalcurrentstock = 0;
 $totalvirtualstock = 0;
 
@@ -620,12 +621,17 @@ while ($i < ($limit ? min($num, $limit) : $num)) {
 			// Selling value
 			print '<td class="right">';
 			if (empty($conf->global->PRODUIT_MULTIPRICES)) {
-				print price(price2num($objp->sellvalue, 'MT'), 1);
+				print '<span class="amount">';
+				if ($stock || (float) ($stock * $objp->price)) {
+					print price(price2num($stock * $objp->price, 'MT'), 1);
+				}
+				print '</span>';
+				$totalsellingprice += $stock * $objp->price;
 			} else {
 				$htmltext = $langs->trans("OptionMULTIPRICESIsOn");
 				print $form->textwithtooltip('<span class="opacitymedium">'.$langs->trans("Variable").'</span>', $htmltext);
 			}
-			print'</td>';
+			print '</td>';
 
 			print '<td class="right">';
 			if ($nbofmovement > 0) {
@@ -680,7 +686,11 @@ if (empty($date) || !$dateIsValid) {
 	} else {
 		print '<td></td>';
 		print '<td class="right">'.price(price2num($totalbuyingprice, 'MT')).'</td>';
-		print '<td></td>';
+		if (empty($conf->global->PRODUIT_MULTIPRICES)) {
+			print '<td class="right">'.price(price2num($totalsellingprice, 'MT')).'</td>';
+		} else {
+			print '<td></td>';
+		}
 		print '<td></td>';
 		print '<td class="right">'.($productid > 0 ? price(price2num($totalcurrentstock, 'MS')) : '').'</td>';
 	}
