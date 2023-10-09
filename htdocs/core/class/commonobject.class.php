@@ -7190,6 +7190,7 @@ abstract class CommonObject
 				$InfoFieldList = explode(":", $param_list[0]);
 				$parentName = '';
 				$parentField = '';
+
 				// 0 : tableName
 				// 1 : label field name
 				// 2 : key fields name (if differ of rowid)
@@ -7197,6 +7198,7 @@ abstract class CommonObject
 				// 4 : where clause filter on column or table extrafield, syntax field='value' or extra.field=value
 				// 5 : id category type
 				// 6 : ids categories list separated by comma for category root
+				// 7 : sort field
 				$keyList = (empty($InfoFieldList[2]) ? 'rowid' : $InfoFieldList[2].' as rowid');
 
 				if (count($InfoFieldList) > 4 && !empty($InfoFieldList[4])) {
@@ -7258,7 +7260,12 @@ abstract class CommonObject
 					$sql .= $sqlwhere;
 					//print $sql;
 
-					$sql .= ' ORDER BY ' . implode(', ', $fields_label);
+					// Note: $InfoFieldList can be 'sellist:TableName:LabelFieldName[:KeyFieldName[:KeyFieldParent[:Filter[:CategoryIdType[:CategoryIdList[:Sortfield]]]]]]'
+					if (isset($InfoFieldList[7]) && preg_match('/^[a-z0-9_-,]+$/i', $InfoFieldList[7])) {
+						$sql .= " ORDER BY ".$this->db->escape($InfoFieldList[7]);
+					} else {
+						$sql .= " ORDER BY ".$this->db->sanitize(implode(', ', $fields_label));
+					}
 
 					dol_syslog(get_class($this) . '::showInputField type=sellist', LOG_DEBUG);
 					$resql = $this->db->query($sql);
@@ -8754,7 +8761,7 @@ abstract class CommonObject
 		} else {
 			// Get cost price for margin calculation
 			if (!empty($fk_product) && $fk_product > 0) {
-				if (isset($conf->global->MARGIN_TYPE) && $conf->global->MARGIN_TYPE == 'costprice') {
+				if (getDolGlobalString('MARGIN_TYPE') == 'costprice') {
 					require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 					$product = new Product($this->db);
 					$result = $product->fetch($fk_product);
@@ -8767,7 +8774,7 @@ abstract class CommonObject
 					} elseif ($product->pmp > 0) {
 						$buyPrice = $product->pmp;
 					}
-				} elseif (isset($conf->global->MARGIN_TYPE) && $conf->global->MARGIN_TYPE == 'pmp') {
+				} elseif (getDolGlobalString('MARGIN_TYPE') == 'pmp') {
 					require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 					$product = new Product($this->db);
 					$result = $product->fetch($fk_product);
