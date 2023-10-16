@@ -183,6 +183,12 @@ print '<tr class="oddeven"><td class="tdtop"><label for="note">'.$langs->trans("
 print '<textarea class="flat quatrevingtpercent" name="note" id="note" rows="'.ROWS_5.'">'.(GETPOSTISSET('note') ? GETPOST('note', 'restricthtml') : (!empty($conf->global->MAIN_INFO_ACCOUNTANT_NOTE) ? $conf->global->MAIN_INFO_ACCOUNTANT_NOTE : '')).'</textarea></td></tr>';
 print '</td></tr>';
 
+// Terms of sale
+if ($conf->global->MAIN_FEATURES_LEVEL >= 2) {
+	print '<tr class="oddeven"><td class="tdtop"><label for="note">'.$langs->trans("TERMSOFSALE").'</label></td><td>';
+	print '<textarea class="flat quatrevingtpercent" name="note" id="note" rows="'.ROWS_5.'">'.(GETPOSTISSET('note') ? GETPOST('note', 'restricthtml') : (!empty($conf->global->MAIN_INFO_ACCOUNTANT_NOTE) ? $conf->global->MAIN_INFO_ACCOUNTANT_NOTE : '')).'</textarea></td></tr>';
+	print '</td></tr>';
+}
 print '</table>';
 
 print $form->buttonsSaveCancel("Save", '');
