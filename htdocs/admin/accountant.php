@@ -29,6 +29,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
 
+
 $action = GETPOST('action', 'aZ09');
 $contextpage = GETPOST('contextpage', 'aZ') ?GETPOST('contextpage', 'aZ') : 'adminaccoutant'; // To manage different context of search
 
@@ -67,6 +68,7 @@ if (($action == 'update' && !GETPOST("cancel", 'alpha'))
 	dolibarr_set_const($db, "MAIN_INFO_ACCOUNTANT_WEB",     GETPOST("web", 'alphanohtml'),         'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, "MAIN_INFO_ACCOUNTANT_CODE",    GETPOST("code", 'alphanohtml'),        'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, "MAIN_INFO_ACCOUNTANT_NOTE",    GETPOST("note", 'restricthtml'),       'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, "MAIN_INFO_SOCIETE_TERMSOFSALE", GETPOST("termsofsale", 'restricthtml'), 'chaine', 0, '', $conf->entity);
 
 	if ($action != 'updateedit' && !$error) {
 		setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
@@ -185,8 +187,67 @@ print '</td></tr>';
 
 // Terms of sale
 if ($conf->global->MAIN_FEATURES_LEVEL >= 2) {
-	print '<tr class="oddeven"><td class="tdtop"><label for="note">'.$langs->trans("TERMSOFSALE").'</label></td><td>';
-	print '<textarea class="flat quatrevingtpercent" name="note" id="note" rows="'.ROWS_5.'">'.(GETPOSTISSET('note') ? GETPOST('note', 'restricthtml') : (!empty($conf->global->MAIN_INFO_ACCOUNTANT_NOTE) ? $conf->global->MAIN_INFO_ACCOUNTANT_NOTE : '')).'</textarea></td></tr>';
+	//WYSIWYG Editor
+	require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
+
+	if (isModEnabled('fckeditor') && !empty($conf->global->FCKEDITOR_ENABLE_NOTE_PUBLIC)) {
+		$typeofdatapub = 'ckeditor:dolibarr_notes:100%:200::1:12:95%:0'; // Rem: This var is for all notes, not only thirdparties note.
+	} else {
+		$typeofdatapub = 'textarea:12:95%';
+	}
+
+
+	$substitutionarray = getCommonSubstitutionArray($langs, 0, array('object', 'objectamount', 'user'));
+	complete_substitutions_array($substitutionarray, $langs);
+	print '<tr class="oddeven"><td>';
+	$texthelp = $langs->trans("FollowingConstantsWillBeSubstituted") . '<br>';
+	foreach ($substitutionarray as $key => $val) {
+		$texthelp .= $key . '<br>';
+	}
+	print $form->textwithpicto($langs->trans("TERMSOFSALE"), $texthelp, 1, 'help', '', 0, 2, 'tooltipmessagelogin');
+	print '</td><td>';
+	$doleditor = new DolEditor('termsofsale', (getDolGlobalString('MAIN_INFO_SOCIETE_TERMSOFSALE') ? getDolGlobalString('MAIN_INFO_SOCIETE_TERMSOFSALE') : ''), '', 600, 'dolibarr_notes', 'In', false, true, true, ROWS_4, '90%');
+	$doleditor->Create();
+	print '</td></tr>';
+
+	// Filigram for Terms of sale
+	print '<tr class="oddeven"><td><label for="logo">'.$form->textwithpicto($langs->trans("Filigram "), $tooltiplogo).'</label></td><td>';
+	print '<div class="centpercent nobordernopadding valignmiddle "><div class="inline-block marginrightonly">';
+	if ($maxmin > 0) {
+		print '<input type="hidden" name="MAX_FILE_SIZE" value="'.($maxmin * 1024).'">';	// MAX_FILE_SIZE must precede the field type=file
+	}
+	print '<input type="file" class="flat minwidth100 maxwidthinputfileonsmartphone" name="logo" id="logo" accept="image/*">';
+	print '</div>';
+	if (!empty($mysoc->logo_small)) {
+		if (file_exists($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small)) {
+			print '<div class="inline-block valignmiddle">';
+			print '<img style="max-height: 80px; max-width: 200px;" src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=mycompany&file='.urlencode('logos/thumbs/'.$mysoc->logo_small).'">';
+			print '</div>';
+		} elseif (!empty($mysoc->logo)) {
+			if (!file_exists($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_mini)) {
+				$imgThumbMini = vignette($conf->mycompany->dir_output.'/logos/'.$mysoc->logo, $maxwidthmini, $maxheightmini, '_mini', $quality);
+			}
+			$imgThumbSmall = vignette($conf->mycompany->dir_output.'/logos/'.$mysoc->logo, $maxwidthmini, $maxheightmini, '_small', $quality);
+			print '<div class="inline-block valignmiddle">';
+			print '<img style="max-height: 80px; max-width: 200px;" src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=mycompany&amp;file='.urlencode('logos/thumbs/'.basename($imgThumbSmall)).'">';
+			print '</div>';
+		}
+		print '<div class="inline-block valignmiddle marginrightonly">';
+		print '<a class="reposition" href="'.$_SERVER["PHP_SELF"].'?action=removelogo&token='.newToken().'">'.img_delete($langs->trans("Delete"), '', 'marginleftonly').'</a>';
+		print '</div>';
+	} elseif (!empty($mysoc->logo)) {
+		if (file_exists($conf->mycompany->dir_output.'/logos/'.$mysoc->logo)) {
+			print '<div class="inline-block valignmiddle">';
+			print '<img style="max-height: 80px" src="'.DOL_URL_ROOT.'/viewimage.php?modulepart=mycompany&file='.urlencode('logos/'.$mysoc->logo).'">';
+			print '</div>';
+			print '<div class="inline-block valignmiddle marginrightonly"><a class="reposition" href="'.$_SERVER["PHP_SELF"].'?action=removelogo&token='.newToken().'">'.img_delete($langs->trans("Delete"), '', 'marginleftonly').'</a></div>';
+		} else {
+			print '<div class="inline-block valignmiddle">';
+			print '<img height="80" src="'.DOL_URL_ROOT.'/public/theme/common/nophoto.png">';
+			print '</div>';
+		}
+	}
+	print '</div>';
 	print '</td></tr>';
 }
 print '</table>';
