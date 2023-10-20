@@ -819,6 +819,7 @@ if ($resql) {
 	// List of mass actions available
 	$arrayofmassactions = array(
 		// TODO add mass action here
+		'builddoc'=>img_picto('', 'pdf', 'class="pictofixedwidth"').$langs->trans("PDFMerge"),
 	);
 	$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
@@ -827,6 +828,12 @@ if ($resql) {
 		$url .= '&socid='.$socid;
 	}
 	$newcardbutton = '';//dolGetButtonTitle($langs->trans('NewOrder'), '', 'fa fa-plus-circle', $url, '', $contextpage == 'orderlistdet' && $permissiontoadd);
+
+	// Export list
+	if (isModEnabled('export')) {
+		var_dump($_SERVER["PHP_SELF"].'?'.$param.'&sortfield='.$sortfield.'&sortorder='.$sortorder);
+		$buttontitle .= dolGetButtonTitle($langs->trans('ExportExcel'), '', 'fa fa-file-excel', $url, '', $contextpage == 'orderlistdet' && $permissiontoexport);
+	}
 
 	// Lines of title fields
 	print '<form method="POST" id="searchFormList" action="'.$_SERVER["PHP_SELF"].'">';
