@@ -819,6 +819,7 @@ if ($resql) {
 	// List of mass actions available
 	$arrayofmassactions = array(
 		// TODO add mass action here
+		// 'builddoc'=>img_picto('', 'pdf', 'class="pictofixedwidth"').$langs->trans("PDFMerge"),
 	);
 	$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
