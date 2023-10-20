@@ -832,7 +832,7 @@ if ($resql) {
 	// Export list
 	if (isModEnabled('export')) {
 		var_dump($_SERVER["PHP_SELF"].'?'.$param.'&sortfield='.$sortfield.'&sortorder='.$sortorder);
-		$buttontitle .= dolGetButtonTitle($langs->trans('ExportExcel'), '', 'fa fa-file-excel', $url, '', $contextpage == 'orderlistdet' && $permissiontoexport);
+		$newcardbutton .= dolGetButtonTitle($langs->trans('ExportExcel'), '', 'fa fa-file-excel', $url, '', $contextpage == 'orderlistdet' && $permissiontoexport);
 	}
 
 	// Lines of title fields
