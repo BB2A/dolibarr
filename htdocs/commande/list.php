@@ -11,7 +11,7 @@
  * Copyright (C) 2015       Jean-François Ferry     <jfefe@aternatik.fr>
  * Copyright (C) 2016-2023  Ferran Marcet           <fmarcet@2byte.es>
  * Copyright (C) 2018-2023  Charlene Benke	        <charlene@patas-monkey.com>
- * Copyright (C) 2021	   	Anthony Berton			<anthony.berton@bb2a.fr>
+ * Copyright (C) 2021-2024	Anthony Berton			<anthony.berton@bb2a.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1012,7 +1012,14 @@ if ($search_sale && $search_sale != '-1') {
 	if ($search_sale == -2) {
 		$sql .= " AND NOT EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = c.fk_soc)";
 	} elseif ($search_sale > 0) {
-		$sql .= " AND EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = c.fk_soc AND sc.fk_user = ".((int) $search_sale).")";
+		$sql .= " AND EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = c.fk_soc AND (sc.fk_user = ".((int) $search_sale);
+		if (!$user->hasRight('societe', 'client', 'voir')) {
+			$userschilds = $user->getAllChildIds();
+			foreach ($userschilds as $key => $value) {
+				$sql .= ' OR sc.fk_user = '.((int) $value);
+			}
+		}
+		$sql .= "))";
 	}
 }
 // Search for tag/category ($searchCategoryCustomerList is an array of ID)

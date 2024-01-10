@@ -1,22 +1,22 @@
 <?php
-/* Copyright (C) 2001-2007 Rodolphe Quiedeville		<rodolphe@quiedeville.org>
- * Copyright (C) 2004-2016 Laurent Destailleur		<eldy@users.sourceforge.net>
- * Copyright (C) 2004      Eric Seigne				<eric.seigne@ryxeo.com>
- * Copyright (C) 2005      Marc Barilley / Ocebo	<marc@ocebo.com>
- * Copyright (C) 2005-2013 Regis Houssin			<regis.houssin@inodbox.com>
- * Copyright (C) 2006      Andre Cianfarani			<acianfa@free.fr>
- * Copyright (C) 2010-2011 Juanjo Menent			<jmenent@2byte.es>
- * Copyright (C) 2010-2022 Philippe Grand			<philippe.grand@atoo-net.com>
- * Copyright (C) 2012      Christophe Battarel		<christophe.battarel@altairis.fr>
- * Copyright (C) 2013      Cédric Salvador			<csalvador@gpcsolutions.fr>
- * Copyright (C) 2015      Jean-François Ferry		<jfefe@aternatik.fr>
- * Copyright (C) 2016-2021 Ferran Marcet			<fmarcet@2byte.es>
- * Copyright (C) 2017-2018 Charlene Benke			<charlie@patas-monkey.com>
- * Copyright (C) 2018	   Nicolas ZABOURI			<info@inovea-conseil.com>
- * Copyright (C) 2019-2021 Alexandre Spangaro		<aspangaro@open-dsi.fr>
- * Copyright (C) 2021	   Anthony Berton			<anthony.berton@bb2a.fr>
- * Copyright (C) 2021      Frédéric France			<frederic.france@netlogic.fr>
- * Copyright (C) 2022      Josep Lluís Amador		<joseplluis@lliuretic.cat>
+/* Copyright (C) 2001-2007	Rodolphe Quiedeville		<rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2016	Laurent Destailleur		<eldy@users.sourceforge.net>
+ * Copyright (C) 2004		Eric Seigne				<eric.seigne@ryxeo.com>
+ * Copyright (C) 2005		Marc Barilley / Ocebo	<marc@ocebo.com>
+ * Copyright (C) 2005-2013	Regis Houssin			<regis.houssin@inodbox.com>
+ * Copyright (C) 2006		Andre Cianfarani			<acianfa@free.fr>
+ * Copyright (C) 2010-2011	Juanjo Menent			<jmenent@2byte.es>
+ * Copyright (C) 2010-2022	Philippe Grand			<philippe.grand@atoo-net.com>
+ * Copyright (C) 2012		Christophe Battarel		<christophe.battarel@altairis.fr>
+ * Copyright (C) 2013		Cédric Salvador			<csalvador@gpcsolutions.fr>
+ * Copyright (C) 2015		Jean-François Ferry		<jfefe@aternatik.fr>
+ * Copyright (C) 2016-2021	Ferran Marcet			<fmarcet@2byte.es>
+ * Copyright (C) 2017-2018	Charlene Benke			<charlie@patas-monkey.com>
+ * Copyright (C) 2018		Nicolas ZABOURI			<info@inovea-conseil.com>
+ * Copyright (C) 2019-2021	Alexandre Spangaro		<aspangaro@open-dsi.fr>
+ * Copyright (C) 2021-2024	Anthony Berton			<anthony.berton@bb2a.fr>
+ * Copyright (C) 2021		Frédéric France			<frederic.france@netlogic.fr>
+ * Copyright (C) 2022		Josep Lluís Amador		<joseplluis@lliuretic.cat>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -737,9 +737,20 @@ if ($search_sale && $search_sale != '-1') {
 	if ($search_sale == -2) {
 		$sql .= " AND NOT EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = p.fk_soc)";
 	} elseif ($search_sale > 0) {
-		$sql .= " AND EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = p.fk_soc AND sc.fk_user = ".((int) $search_sale).")";
+		$sql .= " AND EXISTS (SELECT sc.fk_soc FROM ".MAIN_DB_PREFIX."societe_commerciaux as sc WHERE sc.fk_soc = p.fk_soc AND (sc.fk_user = ".((int) $search_sale);
+		if (!$user->hasRight('societe', 'client', 'voir')) {
+			$userschilds = $user->getAllChildIds();
+			foreach ($userschilds as $key => $value) {
+				$sql .= ' OR sc.fk_user = '.((int) $value);
+			}
+		}
+		$sql .= "))";
 	}
 }
+// $userschilds = $user->getAllChildIds();
+// $userschilds = $user->cache_childids($user->id);
+var_dump($search_sale, $userschilds);
+// print $user->cache_childids;
 // Search for tag/category ($searchCategoryCustomerList is an array of ID)
 $searchCategoryCustomerOperator = -1;
 $searchCategoryCustomerList = array($search_categ_cus);
