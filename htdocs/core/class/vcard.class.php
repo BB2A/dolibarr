@@ -119,7 +119,7 @@ class vCard
 		}
 		$key .= ";VALUE=uri";
 		//$key .= ";".$this->encoding;
-		$this->properties[$key] = 'tel:'.$number;
+		$this->properties[$key] = $number;
 	}
 
 	/**
@@ -206,7 +206,7 @@ class vCard
 		if ($label != "") {
 			$key .= ';LABEL="'.encode($label).'"';
 		}
-		$key .= ";".$this->encoding;
+		$key .= ";";
 		$this->properties[$key] = encode($postoffice).";".encode($extended).";".encode($street).";".encode($city).";".encode($region).";".encode($zip).";".encode($country);
 
 		//if ($this->properties["LABEL;".$type.";".$this->encoding] == '') {
