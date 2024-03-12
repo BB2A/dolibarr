@@ -2353,6 +2353,7 @@ INVOICE_ADD_SWISS_QR_CODE=Show the swiss QR-Bill code on invoices
 INVOICE_ADD_SWISS_QR_CODEMore=Switzerland's standard for invoices; make sure ZIP & City are filled and that the accounts have valid Swiss/Liechtenstein IBANs.
 INVOICE_SHOW_SHIPPING_ADDRESS=Show shipping address
 INVOICE_SHOW_SHIPPING_ADDRESSMore=Compulsory indication in some countries (France, ...)
+PDF_PROPAL_SHOW_PRICE_INCL_TAX=Show include tax column
 UrlSocialNetworksDesc=Url link of social network. Use {socialid} for the variable part that contains the social network ID.
 IfThisCategoryIsChildOfAnother=If this category is a child of another one
 DarkThemeMode=Dark theme mode
