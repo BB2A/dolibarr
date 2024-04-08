@@ -65,6 +65,10 @@ if ($action == 'update') {
 	if (GETPOSTISSET('MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_UNIT_PRICE')) {
 		dolibarr_set_const($db, "MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_UNIT_PRICE", GETPOST("MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_UNIT_PRICE"), 'chaine', 0, '', $conf->entity);
 	}
+	if (GETPOSTISSET('ORDER_SHOW_SHIPPING_ADDRESS')) {
+		dolibarr_set_const($db, "ORDER_SHOW_SHIPPING_ADDRESS", GETPOSTINT("ORDER_SHOW_SHIPPING_ADDRESS"), 'chaine', 0, '', $conf->entity);
+		dolibarr_del_const($db, "ORDER_SHOW_SHIPPING_ADDRESS", $conf->entity);
+	}
 	if (GETPOSTISSET('MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_TOTAL_COLUMN')) {
 		dolibarr_set_const($db, "MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_TOTAL_COLUMN", GETPOST("MAIN_GENERATE_DOCUMENTS_SUPPLIER_PROPOSAL_WITHOUT_TOTAL_COLUMN"), 'chaine', 0, '', $conf->entity);
 	}
@@ -164,6 +168,26 @@ if (isModEnabled('propal')) {
 	print '</div>';
 }
 
+if (isModEnabled('order')) {
+	print load_fiche_titre($langs->trans("Orders"), '', 'order');
+
+	print '<div class="div-table-responsive-no-min">';
+	print '<table summary="more" class="noborder centpercent">';
+	print '<tr class="liste_titre"><td class="titlefieldmiddle">'.$langs->trans("Parameter").'</td><td width="200px">'.$langs->trans("Value").'</td></tr>';
+
+	print '<tr class="oddeven"><td>';
+	print $form->textwithpicto($langs->trans("SHOW_SHIPPING_ADDRESS"), '');
+	print '</td><td>';
+	if ($conf->use_javascript_ajax) {
+		print ajax_constantonoff('ORDER_SHOW_SHIPPING_ADDRESS');
+	} else {
+		$arrval = array('0' => $langs->trans("No"), '1' => $langs->trans("Yes"));
+		print $form->selectarray("ORDER_SHOW_SHIPPING_ADDRESS", $arrval, getDolGlobalInt('ORDER_SHOW_SHIPPING_ADDRESS'));
+	}
+	print '</td></tr>';
+	print '</table>';
+	print '</div>';
+}
 
 if (isModEnabled('supplier_proposal')) {
 	$langs->load("supplier_proposal");
@@ -279,7 +303,7 @@ if (isModEnabled('invoice')) {
 	print '</td></tr>';
 
 	print '<tr class="oddeven"><td>';
-	print $form->textwithpicto($langs->trans("INVOICE_SHOW_SHIPPING_ADDRESS"), $langs->trans("INVOICE_SHOW_SHIPPING_ADDRESSMore"));
+	print $form->textwithpicto($langs->trans("SHOW_SHIPPING_ADDRESS"), $langs->trans("SHOW_SHIPPING_ADDRESSMore"));
 	print '</td><td>';
 	if ($conf->use_javascript_ajax) {
 		print ajax_constantonoff('INVOICE_SHOW_SHIPPING_ADDRESS');
