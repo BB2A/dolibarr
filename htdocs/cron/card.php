@@ -230,7 +230,7 @@ if ($action == 'confirm_clone' && $confirm == 'yes' && $permissiontoadd) {
 	if (1 == 0 && !GETPOST('clone_content') && !GETPOST('clone_receivers')) {
 		setEventMessages($langs->trans("NoCloneOptionsSpecified"), null, 'errors');
 	} else {
-		$objectutil = dol_clone($object, 1); // To avoid to denaturate loaded object when setting some properties for clone or if createFromClone modifies the object. We use native clone to keep this->db valid.
+		$objectutil = dol_clone($object, 1); // We clone to avoid to denaturate loaded object when setting some properties for clone or if createFromClone modifies the object. We use the native clone to keep this->db valid.
 
 		$result = $objectutil->createFromClone($user, (($object->id > 0) ? $object->id : $id));
 		if (is_object($result) || $result > 0) {
@@ -492,7 +492,7 @@ if (($action == "create") || ($action == "edit")) {
 	print "<tr><td>";
 	print $langs->trans('CronDtStart')."</td><td>";
 	if (!empty($object->datestart)) {
-		print $form->selectDate($object->datestart, 'datestart', 1, 1, '', "cronform");
+		print $form->selectDate($object->datestart, 'datestart', 1, 1, 0, "cronform");
 	} else {
 		print $form->selectDate(-1, 'datestart', 1, 1, 1, "cronform");
 	}
@@ -504,7 +504,7 @@ if (($action == "create") || ($action == "edit")) {
 	print "<tr><td>";
 	print $langs->trans('CronDtEnd')."</td><td>";
 	if (!empty($object->dateend)) {
-		print $form->selectDate($object->dateend, 'dateend', 1, 1, '', "cronform");
+		print $form->selectDate($object->dateend, 'dateend', 1, 1, 0, "cronform");
 	} else {
 		print $form->selectDate(-1, 'dateend', 1, 1, 1, "cronform");
 	}
@@ -542,9 +542,9 @@ if (($action == "create") || ($action == "edit")) {
 	//print ' ('.$langs->trans('CronFrom').')';
 	print "</td><td>";
 	if (!empty($object->datenextrun)) {
-		print $form->selectDate($object->datenextrun, 'datenextrun', 1, 1, '', "cronform");
+		print $form->selectDate($object->datenextrun, 'datenextrun', 1, 1, 0, "cronform");
 	} else {
-		print $form->selectDate(-1, 'datenextrun', 1, 1, '', "cronform", 1, 1);
+		print $form->selectDate(-1, 'datenextrun', 1, 1, 0, "cronform", 1, 1);
 	}
 	print "</td>";
 	print "<td>";
@@ -593,7 +593,7 @@ if (($action == "create") || ($action == "edit")) {
 	print "<td>".$langs->trans($object->label);
 	print "</td></tr>";*/
 
-	print '<tr><td class="titlefield">';
+	print '<tr><td class="titlefieldmiddle">';
 	print $langs->trans('CronType')."</td><td>";
 	print $formCron->select_typejob('jobtype', $object->jobtype, 1);
 	print "</td></tr>";
@@ -631,7 +631,7 @@ if (($action == "create") || ($action == "edit")) {
 	print '<tr><td>';
 	print $langs->trans('CronNote')."</td><td>";
 	if (!is_null($object->note_private) && $object->note_private != '') {
-		print $langs->trans($object->note_private);
+		print '<span class="small">'.$langs->trans($object->note_private).'</small>';
 	}
 	print "</td></tr>";
 
@@ -660,7 +660,7 @@ if (($action == "create") || ($action == "edit")) {
 	print '<div class="underbanner clearboth"></div>';
 	print '<table class="border centpercent tableforfield">';
 
-	print '<tr><td class="titlefield">';
+	print '<tr><td class="titlefieldmiddle">';
 	print $langs->trans('CronEvery')."</td>";
 	print "<td>";
 	if ($object->unitfrequency == "60") {
@@ -741,7 +741,7 @@ if (($action == "create") || ($action == "edit")) {
 	print '<div class="underbanner clearboth"></div>';
 	print '<table class="border centpercent tableforfield">';
 
-	print '<tr><td class="titlefield">';
+	print '<tr><td class="titlefieldmiddle">';
 	print $langs->trans('CronDtLastLaunch')."</td><td>";
 	if (!empty($object->datelastrun)) {
 		print $form->textwithpicto(dol_print_date($object->datelastrun, 'dayhoursec'), $langs->trans("CurrentTimeZone"));

@@ -7,6 +7,7 @@
  * Copyright (C) 2013      Florian Henry	     <florian.henry@open-concept.pro>
  * Copyright (C) 2014-2015 Marcos García         <marcosgdf@gmail.com>
  * Copyright (C) 2023-2024 Frédéric France       <frederic.france@free.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,11 +109,6 @@ class Delivery extends CommonObject
 	public $model_pdf;
 
 	public $commande_id;
-
-	/**
-	 * @var array 	Status labels
-	 */
-	public $labelStatus;
 
 	/**
 	 * @var DeliveryLine[] lines
@@ -280,7 +276,7 @@ class Delivery extends CommonObject
 	 *  @param	array	$array_options			Array options
 	 *	@return	int								Return integer <0 if KO, >0 if OK
 	 */
-	public function create_line($origin_id, $qty, $fk_product, $description, $array_options = null)
+	public function create_line($origin_id, $qty, $fk_product, $description, $array_options = [])
 	{
 		// phpcs:enable
 		$error = 0;
@@ -615,7 +611,7 @@ class Delivery extends CommonObject
 			$result = $line->insertExtraFields();
 
 			if ($result < 0) {
-				$this->error[] = $line->error;
+				$this->errors[] = $line->error;
 				$error++;
 			}
 		}
@@ -632,11 +628,11 @@ class Delivery extends CommonObject
 	 * 	Add line
 	 *
 	 *	@param	int		$origin_id				Origin id
-	 *	@param	int		$qty					Qty
+	 *	@param	float	$qty					Qty
 	 *  @param	array	$array_options			Array options
 	 *	@return	void
 	 */
-	public function addline($origin_id, $qty, $array_options = null)
+	public function addline($origin_id, $qty, $array_options = [])
 	{
 		global $conf;
 
@@ -826,7 +822,7 @@ class Delivery extends CommonObject
 
 		global $action;
 		$hookmanager->initHooks(array($this->element . 'dao'));
-		$parameters = array('id'=>$this->id, 'getnomurl' => &$result);
+		$parameters = array('id' => $this->id, 'getnomurl' => &$result);
 		$reshook = $hookmanager->executeHooks('getNomUrl', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 		if ($reshook > 0) {
 			$result = $hookmanager->resPrint;

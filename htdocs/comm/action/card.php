@@ -172,7 +172,7 @@ if (empty($reshook) && (GETPOST('removedassigned') || GETPOST('removedassigned')
 	$idtoremove = GETPOST('removedassigned');
 
 	if (!empty($_SESSION['assignedtouser'])) {
-		$tmpassigneduserids = json_decode($_SESSION['assignedtouser'], 1);
+		$tmpassigneduserids = json_decode($_SESSION['assignedtouser'], true);
 	} else {
 		$tmpassigneduserids = array();
 	}
@@ -199,7 +199,7 @@ if (empty($reshook) && (GETPOST('removedassignedresource') || GETPOST('removedas
 	$idtoremove = GETPOST('removedassignedresource');
 
 	if (!empty($_SESSION['assignedtoresource'])) {
-		$tmpassignedresourceids = json_decode($_SESSION['assignedtoresource'], 1);
+		$tmpassignedresourceids = json_decode($_SESSION['assignedtoresource'], true);
 	} else {
 		$tmpassignedresourceids = array();
 	}
@@ -363,7 +363,8 @@ if (empty($reshook) && $action == 'add') {
 		$object->label = GETPOST('label', 'alphanohtml');
 
 		if (GETPOST("elementtype", 'alpha')) {
-			$modulecodetouseforpermissioncheck = GETPOST("elementtype", 'alpha');
+			$elProp = getElementProperties(GETPOST("elementtype", 'alpha'));
+			$modulecodetouseforpermissioncheck = $elProp['module'];
 
 			$hasPermissionOnLinkedObject = 0;
 			if ($user->hasRight($modulecodetouseforpermissioncheck, 'read')) {
@@ -423,12 +424,6 @@ if (empty($reshook) && $action == 'add') {
 			$object->userassigned[$value['id']] = array('id' => $value['id'], 'transparency' => $transparency);
 
 			$i++;
-		}
-	}
-
-	if (!$error && getDolGlobalString('AGENDA_ENABLE_DONEBY')) {
-		if (GETPOST("doneby") > 0) {
-			$object->userdoneid = GETPOSTINT("doneby");
 		}
 	}
 
@@ -501,10 +496,10 @@ if (empty($reshook) && $action == 'add') {
 			$selectedrecurrulefreq = $reg1[1];
 		}
 		if ($object->recurrule && preg_match('/FREQ=MONTHLY.*BYMONTHDAY(\d+)/i', $object->recurrule, $reg2)) {
-			$selectedrecurrulebymonthday = $reg2[1];
+			$selectedrecurrulebymonthday = (int) $reg2[1];
 		}
 		if ($object->recurrule && preg_match('/FREQ=WEEKLY.*BYDAY(\d+)/i', $object->recurrule, $reg3)) {
-			$selectedrecurrulebyday = $reg3[1];
+			$selectedrecurrulebyday = (int) $reg3[1];
 		}
 
 		// Is event recurrent ?
@@ -629,6 +624,7 @@ if (empty($reshook) && $action == 'add') {
 			$repeateventlimitdate = dol_mktime(23, 59, 59, GETPOSTISSET("limitmonth") ? GETPOSTINT("limitmonth") : 1, GETPOSTISSET("limitday") ? GETPOSTINT("limitday") : 1, GETPOSTISSET("limityear") && GETPOSTINT("limityear") < 2100 ? GETPOSTINT("limityear") : 2100, $tzforfullday ? $tzforfullday : 'tzuserrel');
 			// Set date of end of event
 			$deltatime = num_between_day($object->datep, $datep);
+			// @phan-suppress-next-line PhanPluginSuspiciousParamOrder
 			$datef = dol_time_plus_duree($datef, $deltatime, 'd');
 
 			while ($datep <= $repeateventlimitdate && !$error) {
@@ -825,7 +821,8 @@ if (empty($reshook) && $action == 'update') {
 		$object->note_private = trim(GETPOST("note", "restricthtml"));
 
 		if (GETPOST("elementtype", 'alpha')) {
-			$modulecodetouseforpermissioncheck = GETPOST("elementtype", 'alpha');
+			$elProp = getElementProperties(GETPOST("elementtype", 'alpha'));
+			$modulecodetouseforpermissioncheck = $elProp['module'];
 
 			$hasPermissionOnLinkedObject = 0;
 			if ($user->hasRight($modulecodetouseforpermissioncheck, 'read')) {
@@ -875,12 +872,6 @@ if (empty($reshook) && $action == 'update') {
 
 		$object->transparency = $transparency; // We set transparency on event (even if we can also store it on each user, standard says this property is for event)
 		// TODO store also transparency on owner user
-
-		if (getDolGlobalString('AGENDA_ENABLE_DONEBY')) {
-			if (GETPOST("doneby")) {
-				$object->userdoneid = GETPOSTINT("doneby");
-			}
-		}
 
 		// Check parameters
 		if (GETPOSTISSET('actioncode') && !GETPOST('actioncode', 'aZ09')) {	// actioncode is '0'
@@ -1051,7 +1042,7 @@ if (empty($reshook) && $action == 'confirm_delete' && GETPOST("confirm") == 'yes
 
 	if ($user->hasRight('agenda', 'myactions', 'delete')
 		|| $user->hasRight('agenda', 'allactions', 'delete')) {
-		$result = $object->delete();
+		$result = $object->delete($user);
 
 		if ($result >= 0) {
 			header("Location: index.php");
@@ -1229,16 +1220,6 @@ if ($action == 'create') {
                         setdatefields();
                     });
 
-                    $("#selectcomplete").change(function() {
-						console.log("we change the complete status - set the doneby");
-                        if ($("#selectcomplete").val() == 100) {
-                            if ($("#doneby").val() <= 0) $("#doneby").val(\''.((int) $user->id).'\');
-                        }
-                        if ($("#selectcomplete").val() == 0) {
-                            $("#doneby").val(-1);
-                        }
-                    });
-
                     $("#actioncode").change(function() {
                         if ($("#actioncode").val() == \'AC_RDV\') $("#dateend").addClass("fieldrequired");
                         else $("#dateend").removeClass("fieldrequired");
@@ -1321,10 +1302,10 @@ if ($action == 'create') {
 			$selectedrecurrulefreq = $reg[1];
 		}
 		if ($object->recurrule && preg_match('/FREQ=MONTHLY.*BYMONTHDAY(\d+)/i', $object->recurrule, $reg)) {
-			$selectedrecurrulebymonthday = $reg[1];
+			$selectedrecurrulebymonthday = (int) $reg[1];
 		}
 		if ($object->recurrule && preg_match('/FREQ=WEEKLY.*BYDAY(\d+)/i', $object->recurrule, $reg)) {
-			$selectedrecurrulebyday = $reg[1];
+			$selectedrecurrulebyday = (int) $reg[1];
 		}
 
 		print $form->selectarray('recurrulefreq', $arrayrecurrulefreq, $selectedrecurrulefreq, 0, 0, 0, '', 0, 0, 0, '', 'marginrightonly');
@@ -1410,11 +1391,7 @@ if ($action == 'create') {
 		print $form->selectDate($datep, 'ap', 1, 1, 1, "action", 1, 2, 0, 'fulldaystart', '', '', '', 1, '', '', 'tzuserrel');
 	}
 	print ' <span class="hideonsmartphone">&nbsp; &nbsp; - &nbsp; &nbsp;</span> ';
-	if (GETPOST("afaire") == 1) {
-		print $form->selectDate($datef, 'p2', 1, 1, 1, "action", 1, 2, 0, 'fulldayend', '', '', '', 1, '', '', 'tzuserrel');
-	} else {
-		print $form->selectDate($datef, 'p2', 1, 1, 1, "action", 1, 2, 0, 'fulldayend', '', '', '', 1, '', '', 'tzuserrel');
-	}
+	print $form->selectDate($datef, 'p2', 1, 1, 1, "action", 1, 2, 0, 'fulldayend', '', '', '', 1, '', '', 'tzuserrel');
 	print '</td></tr>';
 
 	print '<tr><td class="">&nbsp;</td><td></td></tr>';
@@ -1447,13 +1424,6 @@ if ($action == 'create') {
 	print '</div>';
 	print '</td></tr>';
 
-	// Done by
-	if (getDolGlobalString('AGENDA_ENABLE_DONEBY')) {
-		print '<tr><td class="nowrap">'.$langs->trans("ActionDoneBy").'</td><td>';
-		print $form->select_dolusers(GETPOSTISSET("doneby") ? GETPOSTINT("doneby") : (!empty($object->userdoneid) && $percent == 100 ? $object->userdoneid : 0), 'doneby', 1);
-		print '</td></tr>';
-	}
-
 	// Location
 	if (!getDolGlobalString('AGENDA_DISABLE_LOCATION')) {
 		print '<tr><td>'.$langs->trans("Location").'</td><td><input type="text" name="location" class="minwidth300 maxwidth150onsmartphone" value="'.(GETPOST('location') ? GETPOST('location') : $object->location).'"></td></tr>';
@@ -1462,7 +1432,7 @@ if ($action == 'create') {
 	if (isModEnabled('category')) {
 		// Categories
 		print '<tr><td>'.$langs->trans("Categories").'</td><td>';
-		$cate_arbo = $form->select_all_categories(Categorie::TYPE_ACTIONCOMM, '', 'parent', 64, 0, 1);
+		$cate_arbo = $form->select_all_categories(Categorie::TYPE_ACTIONCOMM, '', 'parent', 64, 0, 3);
 		print img_picto('', 'category').$form->multiselectarray('categories', $cate_arbo, GETPOST('categories', 'array'), '', 0, 'minwidth300 quatrevingtpercent widthcentpercentminusx', 0, 0);
 		print "</td></tr>";
 	}
@@ -1541,7 +1511,7 @@ if ($action == 'create') {
 
 		// Related contact
 		print '<tr><td class="nowrap">'.$langs->trans("ActionOnContact").'</td><td>';
-		$preselectedids = GETPOST('socpeopleassigned', 'array');
+		$preselectedids = GETPOST('socpeopleassigned', 'array:int');
 		if (GETPOSTINT('contactid')) {
 			$preselectedids[GETPOSTINT('contactid')] = GETPOSTINT('contactid');
 		}
@@ -1550,12 +1520,27 @@ if ($action == 'create') {
 		}
 		// select "all" or "none" contact by default
 		if (getDolGlobalInt('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT')) {
+			// Warning: MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT will hangs on large databases
 			$select_contact_default = 0; // select "all" contacts by default : avoid to use it if there is a lot of contacts
 		} else {
 			$select_contact_default = -1; // select "none" by default
 		}
 		print img_picto('', 'contact', 'class="paddingrightonly"');
-		print $form->selectcontacts(GETPOSTISSET('socid') ? GETPOSTINT('socid') : $select_contact_default, $preselectedids, 'socpeopleassigned[]', 1, '', '', 0, 'minwidth300 widthcentpercentminusxx maxwidth500', false, 0, array(), false, 'multiple', 'contactid');
+
+		if (getDolGlobalString('CONTACT_USE_SEARCH_TO_SELECT') && $conf->use_javascript_ajax) {
+			// FIXME Use a select without the "multiple" (not supported when CONTACT_USE_SEARCH_TO_SELECT is on) or allow use only when $object->socid is set...
+			/*
+			 $selected = array_keys($object->socpeopleassigned);
+			 print $form->select_contact(getDolGlobalString('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT') ? 0 : $object->socid, $selected, 'socpeopleassigned', 1, '', '', 1, 'minwidth300 widthcentpercentminusx', false, 0, 0, array());
+			 */
+			$sav = getDolGlobalString('CONTACT_USE_SEARCH_TO_SELECT');
+			$conf->global->CONTACT_USE_SEARCH_TO_SELECT = 0;
+			print $form->selectcontacts(GETPOSTISSET('socid') ? GETPOSTINT('socid') : $select_contact_default, $preselectedids, 'socpeopleassigned[]', 1, '', '', 0, 'minwidth300 widthcentpercentminusxx maxwidth500', 0, 0, array(), false, 'multiple', 'contactid');
+			$conf->global->CONTACT_USE_SEARCH_TO_SELECT = $sav;
+		} else {
+			print $form->selectcontacts(GETPOSTISSET('socid') ? GETPOSTINT('socid') : $select_contact_default, $preselectedids, 'socpeopleassigned[]', 1, '', '', 0, 'minwidth300 widthcentpercentminusxx maxwidth500', 0, 0, array(), false, 'multiple', 'contactid');
+		}
+
 		print '</td></tr>';
 	}
 
@@ -1609,7 +1594,9 @@ if ($action == 'create') {
 		include_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 
 		$hasPermissionOnLinkedObject = 0;
-		if ($user->hasRight($origin, 'read')) {
+
+		$elProp = getElementProperties($origin);
+		if ($user->hasRight($elProp['module'], 'read')) {
 			$hasPermissionOnLinkedObject = 1;
 		}
 		//var_dump('origin='.$origin.' originid='.$originid.' hasPermissionOnLinkedObject='.$hasPermissionOnLinkedObject);
@@ -1794,12 +1781,12 @@ if ($id > 0) {
 	$head = actions_prepare_head($object);
 
 	$now = dol_now();
-	$delay_warning = $conf->global->MAIN_DELAY_ACTIONS_TODO * 24 * 60 * 60;
+	$delay_warning = getDolGlobalInt('MAIN_DELAY_ACTIONS_TODO') * 24 * 60 * 60;
 
 
 	// Confirmation suppression action
 	if ($action == 'delete') {
-		print $form->formconfirm("card.php?id=".urlencode($id), $langs->trans("DeleteAction"), $langs->trans("ConfirmDeleteAction"), "confirm_delete", '', '', 1);
+		print $form->formconfirm("card.php?id=".urlencode((string) ($id)), $langs->trans("DeleteAction"), $langs->trans("ConfirmDeleteAction"), "confirm_delete", '', '', 1);
 	}
 
 	if ($action == 'edit') {
@@ -1948,21 +1935,9 @@ if ($id > 0) {
 		*/
 		print '</td><td td colspan="3">';
 		$tzforfullday = getDolGlobalString('MAIN_STORE_FULL_EVENT_IN_GMT');
-		if (GETPOST("afaire") == 1) {
-			print $form->selectDate($datep ? $datep : $object->datep, 'ap', 1, 1, 0, "action", 1, 1, 0, 'fulldaystart', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		} elseif (GETPOST("afaire") == 2) {
-			print $form->selectDate($datep ? $datep : $object->datep, 'ap', 1, 1, 1, "action", 1, 1, 0, 'fulldaystart', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		} else {
-			print $form->selectDate($datep ? $datep : $object->datep, 'ap', 1, 1, 1, "action", 1, 1, 0, 'fulldaystart', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		}
+		print $form->selectDate($datep ? $datep : $object->datep, 'ap', 1, 1, 0, "action", 1, 2, 0, 'fulldaystart', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
 		print ' <span class="hideonsmartphone">&nbsp; &nbsp; - &nbsp; &nbsp;</span> ';
-		if (GETPOST("afaire") == 1) {
-			print $form->selectDate($datef ? $datef : $object->datef, 'p2', 1, 1, 1, "action", 1, 0, 0, 'fulldayend', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		} elseif (GETPOST("afaire") == 2) {
-			print $form->selectDate($datef ? $datef : $object->datef, 'p2', 1, 1, 1, "action", 1, 0, 0, 'fulldayend', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		} else {
-			print $form->selectDate($datef ? $datef : $object->datef, 'p2', 1, 1, 1, "action", 1, 0, 0, 'fulldayend', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
-		}
+		print $form->selectDate($datef ? $datef : $object->datef, 'p2', 1, 1, 1, "action", 1, 2, 0, 'fulldayend', '', '', '', 1, '', '', $object->fulldayevent ? ($tzforfullday ? $tzforfullday : 'tzuserrel') : 'tzuserrel');
 		print '</td></tr>';
 
 		print '<tr><td class="">&nbsp;</td><td></td></tr>';
@@ -2010,13 +1985,6 @@ if ($id > 0) {
 		}*/
 		print '</td></tr>';
 
-		// Realised by
-		if (getDolGlobalString('AGENDA_ENABLE_DONEBY')) {
-			print '<tr><td class="nowrap">'.$langs->trans("ActionDoneBy").'</td><td colspan="3">';
-			print $form->select_dolusers($object->userdoneid > 0 ? $object->userdoneid : -1, 'doneby', 1);
-			print '</td></tr>';
-		}
-
 		// Location
 		if (!getDolGlobalString('AGENDA_DISABLE_LOCATION')) {
 			print '<tr><td>'.$langs->trans("Location").'</td><td colspan="3"><input type="text" name="location" class="minwidth300 maxwidth150onsmartphone" value="'.$object->location.'"></td></tr>';
@@ -2031,7 +1999,7 @@ if ($id > 0) {
 		// Tags-Categories
 		if (isModEnabled('category')) {
 			print '<tr><td>'.$langs->trans("Categories").'</td><td colspan="3">';
-			$cate_arbo = $form->select_all_categories(Categorie::TYPE_ACTIONCOMM, '', 'parent', 64, 0, 1);
+			$cate_arbo = $form->select_all_categories(Categorie::TYPE_ACTIONCOMM, '', 'parent', 64, 0, 3);
 			$c = new Categorie($db);
 			$cats = $c->containing($object->id, Categorie::TYPE_ACTIONCOMM);
 			$arrayselected = array();
@@ -2059,14 +2027,28 @@ if ($id > 0) {
 			$events[] = array('method' => 'getContacts', 'url' => dol_buildpath('/core/ajax/contacts.php?showempty=1', 1), 'htmlname' => 'contactid', 'params' => array('add-customer-contact' => 'disabled'));
 			// TODO Refresh also list of project if conf PROJECT_ALLOW_TO_LINK_FROM_OTHER_COMPANY not defined with list linked to socid ?
 			// FIXME If we change company, we may get a project that does not match
-			print img_picto('', 'company', 'class="pictofixedwidth"').$form->select_company($object->socid, 'socid', '', 'SelectThirdParty', 1, 0, $events, 0, 'minwidth200');
+			print img_picto('', 'company', 'class="pictofixedwidth"').$form->select_company($object->socid, 'socid', '', 'SelectThirdParty', 1, 0, $events, 0, 'minwidth300');
 			print '</div>';
 			print '</td></tr>';
 
-			// related contact
+			// Related contact
 			print '<tr><td>'.$langs->trans("ActionOnContact").'</td><td>';
 			print '<div class="maxwidth200onsmartphone">';
-			print img_picto('', 'contact', 'class="paddingrightonly"').$form->selectcontacts(!getDolGlobalString('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT') ? $object->socid : 0, array_keys($object->socpeopleassigned), 'socpeopleassigned[]', 1, '', '', 1, 'minwidth300 widthcentpercentminusx', false, 0, 0, array(), 'multiple', 'contactid');
+			print img_picto('', 'contact', 'class="paddingrightonly"');
+			if (getDolGlobalString('CONTACT_USE_SEARCH_TO_SELECT') && $conf->use_javascript_ajax) {
+				// FIXME Use the select_contact supporting the "multiple"
+				/*
+				$selected = array_keys($object->socpeopleassigned);
+				print $form->select_contact(getDolGlobalString('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT') ? 0 : $object->socid, $selected, 'socpeopleassigned', 1, '', '', 1, 'minwidth300 widthcentpercentminusx', false, 0, 0, array());
+				*/
+				$sav = getDolGlobalString('CONTACT_USE_SEARCH_TO_SELECT');
+				$conf->global->CONTACT_USE_SEARCH_TO_SELECT = 0;
+				print $form->selectcontacts(getDolGlobalString('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT') ? 0 : ($object->socid > 0 ? $object->socid : -1), array_keys($object->socpeopleassigned), 'socpeopleassigned[]', 1, '', '', 1, 'minwidth300 widthcentpercentminusx', 0, 0, 0, array(), 'multiple', 'contactid');
+				$conf->global->CONTACT_USE_SEARCH_TO_SELECT = $sav;
+			} else {
+				// Warning: MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT will hangs on large databases
+				print $form->selectcontacts(getDolGlobalString('MAIN_ACTIONCOM_CAN_ADD_ANY_CONTACT') ? 0 : $object->socid, array_keys($object->socpeopleassigned), 'socpeopleassigned[]', 1, '', '', 1, 'minwidth300 widthcentpercentminusx', 0, 0, 0, array(), 'multiple', 'contactid');
+			}
 			print '</div>';
 			print '</td>';
 			print '</tr>';
@@ -2339,13 +2321,17 @@ if ($id > 0) {
 
 		print '<div class="underbanner clearboth"></div>';
 
-		// Affichage fiche action en mode visu
-		print '<table class="border tableforfield" width="100%">';
+		// Show event in view mode
+		print '<table class="border tableforfield centpercent">';
 
 		// Type
 		if (getDolGlobalString('AGENDA_USE_EVENT_TYPE')) {
 			print '<tr><td class="titlefield">'.$langs->trans("Type").'</td><td>';
-			print $object->getTypePicto();
+			$labeltoshow = $langs->trans("Action".$object->type_code);
+			if ($object->code) {
+				$labeltoshow .= ' ('.$object->code.')';
+			}
+			print $object->getTypePicto('pictofixedwidth paddingright', $labeltoshow);
 			print $langs->trans("Action".$object->type_code);
 			print '</td></tr>';
 		}
@@ -2441,17 +2427,6 @@ if ($id > 0) {
 		}
 		*/
 		print '	</td></tr>';
-
-		// Done by
-		if (getDolGlobalString('AGENDA_ENABLE_DONEBY')) {
-			print '<tr><td class="nowrap">'.$langs->trans("ActionDoneBy").'</td><td>';
-			if ($object->userdoneid > 0) {
-				$tmpuser = new User($db);
-				$tmpuser->fetch($object->userdoneid);
-				print $tmpuser->getNomUrl(1);
-			}
-			print '</td></tr>';
-		}
 
 		// Categories
 		if (isModEnabled('category')) {

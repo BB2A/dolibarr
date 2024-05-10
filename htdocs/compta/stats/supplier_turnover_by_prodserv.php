@@ -54,7 +54,7 @@ if (GETPOST('subcat', 'alpha') === 'yes') {
 	$subcat = true;
 }
 // product/service
-$selected_type = GETPOSTINT('search_type');
+$selected_type = GETPOST('search_type', "intcomma");
 if ($selected_type == '') {
 	$selected_type = -1;
 }
@@ -263,6 +263,9 @@ if (isModEnabled('accounting') && $modecompta != 'BOOKKEEPING') {
 
 
 $name = array();
+$amount = array();
+$amount_ht = array();
+$qty = array();
 
 // SQL request
 $catotal = 0;

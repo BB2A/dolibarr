@@ -3,6 +3,7 @@
  * Copyright (C) 2016-2022  Alexandre Spangaro      <aspangaro@open-dsi.fr>
  * Copyright (C) 2018-2020  Laurent Destailleur     <eldy@destailleur.fr>
  * Copyright (C) 2018       Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -231,7 +232,7 @@ if ($modecompta == "CREANCES-DETTES") {
 	//$calcmode.='<br>('.$langs->trans("SeeReportInDueDebtMode",'<a href="'.$_SERVER["PHP_SELF"].'?year_start='.$year_start.'&modecompta=CREANCES-DETTES">','</a>').')';
 	//$calcmode.='<br>('.$langs->trans("SeeReportInInputOutputMode",'<a href="'.$_SERVER["PHP_SELF"].'?year_start='.$year_start.'&modecompta=RECETTES-DEPENSES">','</a>').')';
 	$period = $form->selectDate($date_start, 'date_start', 0, 0, 0, '', 1, 0).' - '.$form->selectDate($date_end, 'date_end', 0, 0, 0, '', 1, 0);
-	$arraylist = array('no'=>$langs->trans("None"), 'yes'=>$langs->trans("AccountWithNonZeroValues"), 'all'=>$langs->trans("All"));
+	$arraylist = array('no' => $langs->trans("None"), 'yes' => $langs->trans("AccountWithNonZeroValues"), 'all' => $langs->trans("All"));
 	$period .= ' &nbsp; &nbsp; <span class="opacitymedium">'.$langs->trans("DetailBy").'</span> '.$form->selectarray('showaccountdetail', $arraylist, $showaccountdetail, 0);
 	$periodlink = $textprevyear.$textnextyear;
 	$exportlink = '';
@@ -240,7 +241,7 @@ if ($modecompta == "CREANCES-DETTES") {
 	$builddate = dol_now();
 }
 
-report_header($name, '', $period, $periodlink ?? '', $description, $builddate, $exportlink ?? '', array('modecompta'=>$modecompta, 'action' => ''), $calcmode);
+report_header($name, '', $period, $periodlink ?? '', $description, $builddate, $exportlink ?? '', array('modecompta' => $modecompta, 'action' => ''), $calcmode);
 
 
 if (isModEnabled('accounting') && $modecompta != 'BOOKKEEPING') {
@@ -260,12 +261,12 @@ print '<th class="liste_titre right">'.$langs->trans("PreviousPeriod").'</th>';
 print '<th class="liste_titre right">'.$langs->trans("SelectedPeriod").'</th>';
 foreach ($months as $k => $v) {
 	if (($k + 1) >= $date_startmonth && $k < $date_endmonth) {
-		print '<th class="liste_titre right width50">'.$langs->trans('MonthShort'.sprintf("%02s", ($k + 1))).'</th>';
+		print '<th class="liste_titre right width50">'.$langs->trans('MonthShort'.sprintf("%02d", ($k + 1))).'</th>';
 	}
 }
 foreach ($months as $k => $v) {
 	if (($k + 1) < $date_startmonth) {
-		print '<th class="liste_titre right width50">'.$langs->trans('MonthShort'.sprintf("%02s", ($k + 1))).'</th>';
+		print '<th class="liste_titre right width50">'.$langs->trans('MonthShort'.sprintf("%02d", ($k + 1))).'</th>';
 	}
 }
 print	'</tr>';
@@ -351,14 +352,18 @@ if ($modecompta == 'CREANCES-DETTES') {
 				} else {
 					//var_dump($result);
 					//$r = $AccCat->calculate($result);
-					$r = dol_eval($result, 1, 1, '1');
-					if (is_nan($r)) {
-						$r = 0;
-					}
+					$r = (float) dol_eval($result, 1, 1, '1');
 
-					print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+					if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+						print '<td class="liste_total right"><span class="amount">'.price($r, 0, '', 1, 0, 0).'</span></td>';
+					} else {
+						print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+					}
 				}
 
+				if (!isset($sommes[$code])) {
+					$sommes[$code] = array();
+				}
 				// Year N
 				$code = $cat['code']; // code of categorie ('VTE', 'MAR', ...)
 				if (empty($sommes[$code]['NP'])) {
@@ -378,12 +383,13 @@ if ($modecompta == 'CREANCES-DETTES') {
 				$result = str_replace('--', '+', $result);
 
 				//$r = $AccCat->calculate($result);
-				$r = dol_eval($result, 1, 1, '1');
-				if (is_nan($r)) {
-					$r = 0;
-				}
+				$r = (float) dol_eval($result, 1, 1, '1');
 
-				print '<td class="liste_total right borderright"><span class="amount">'.price($r).'</span></td>';
+				if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+					print '<td class="liste_total right borderright"><span class="amount">'.price($r, 0, '', 1, 0, 0).'</span></td>';
+				} else {
+					print '<td class="liste_total right borderright"><span class="amount">'.price($r).'</span></td>';
+				}
 				if (empty($sommes[$code]['N'])) {
 					$sommes[$code]['N'] = $r;
 				} else {
@@ -400,12 +406,14 @@ if ($modecompta == 'CREANCES-DETTES') {
 						$result = str_replace('--', '+', $result);
 
 						//$r = $AccCat->calculate($result);
-						$r = dol_eval($result, 1, 1, '1');
-						if (is_nan($r)) {
-							$r = 0;
-						}
+						$r = (float) dol_eval($result, 1, 1, '1');
 
-						print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+
+						if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+							print '<td class="liste_total right"><span class="amount">'.price($r, 0, '', 1, 0, 0).'</span></td>';
+						} else {
+							print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+						}
 						if (empty($sommes[$code]['M'][$k])) {
 							$sommes[$code]['M'][$k] = $r;
 						} else {
@@ -423,12 +431,13 @@ if ($modecompta == 'CREANCES-DETTES') {
 						$result = str_replace('--', '+', $result);
 
 						//$r = $AccCat->calculate($result);
-						$r = dol_eval($result, 1, 1, '1');
-						if (is_nan($r)) {
-							$r = 0;
-						}
+						$r = (float) dol_eval($result, 1, 1, '1');
 
-						print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+						if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+							print '<td class="liste_total right"><span class="amount">'.price($r, 0, '', 1, 0, 0).'</span></td>';
+						} else {
+							print '<td class="liste_total right"><span class="amount">'.price($r).'</span></td>';
+						}
 						if (empty($sommes[$code]['M'][$k])) {
 							$sommes[$code]['M'][$k] = $r;
 						} else {
@@ -449,6 +458,9 @@ if ($modecompta == 'CREANCES-DETTES') {
 				$totCat['M'] = array();
 				foreach ($months as $k => $v) {
 					$totCat['M'][$k] = 0;
+				}
+				if (!isset($sommes[$code])) {
+					$sommes[$code] = array();
 				}
 
 				// Set $cpts with array of accounts in the category/group
@@ -586,18 +598,31 @@ if ($modecompta == 'CREANCES-DETTES') {
 				print $labeltoshow;
 				print '</td>';
 
-				print '<td class="right"><span class="amount">'.price($totCat['NP']).'</span></td>';
-				print '<td class="right borderright"><span class="amount">'.price($totCat['N']).'</span></td>';
+				if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+					print '<td class="right"><span class="amount">'.price($totCat['NP'], 0, '', 1, 0, 0).'</span></td>';
+					print '<td class="right borderright"><span class="amount">'.price($totCat['N'], 0, '', 1, 0, 0).'</span></td>';
+				} else {
+					print '<td class="right"><span class="amount">'.price($totCat['NP']).'</span></td>';
+					print '<td class="right borderright"><span class="amount">'.price($totCat['N']).'</span></td>';
+				}
 
 				// Each month
 				foreach ($totCat['M'] as $k => $v) {
 					if (($k + 1) >= $date_startmonth && $k < $date_endmonth) {
-						print '<td class="right nowraponall"><span class="amount">'.price($v).'</span></td>';
+						if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+							print '<td class="right nowraponall"><span class="amount">'.price($v, 0, '', 1, 0, 0).'</span></td>';
+						} else {
+							print '<td class="right nowraponall"><span class="amount">'.price($v).'</span></td>';
+						}
 					}
 				}
 				foreach ($totCat['M'] as $k => $v) {
 					if (($k + 1) < $date_startmonth) {
-						print '<td class="right nowraponall"><span class="amount">'.price($v).'</span></td>';
+						if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+							print '<td class="right nowraponall"><span class="amount">'.price($v, 0, '', 1, 0, 0).'</span></td>';
+						} else {
+							print '<td class="right nowraponall"><span class="amount">'.price($v).'</span></td>';
+						}
 					}
 				}
 
@@ -627,8 +652,13 @@ if ($modecompta == 'CREANCES-DETTES') {
 							print '<td class="tdoverflowmax250 borderright" title="'.dol_escape_htmltag($labeldetail).'">';
 							print dol_escape_htmltag($labeldetail);
 							print '</td>';
-							print '<td class="right"><span class="amount">'.price($resultNP).'</span></td>';
-							print '<td class="right borderright"><span class="amount">'.price($resultN).'</span></td>';
+							if (getDolGlobalInt('ACCOUNTANCY_TRUNC_DECIMAL_ON_BALANCE_REPORT')) {
+								print '<td class="right"><span class="amount">'.price($resultNP, 0, '', 1, 0, 0).'</span></td>';
+								print '<td class="right borderright"><span class="amount">'.price($resultN, 0, '', 1, 0, 0).'</span></td>';
+							} else {
+								print '<td class="right"><span class="amount">'.price($resultNP).'</span></td>';
+								print '<td class="right borderright"><span class="amount">'.price($resultN).'</span></td>';
+							}
 
 							// Make one call for each month
 							foreach ($months as $k => $v) {

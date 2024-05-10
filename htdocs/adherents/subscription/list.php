@@ -50,7 +50,7 @@ $search_lastname = GETPOST('search_lastname', 'alpha');
 $search_firstname = GETPOST('search_firstname', 'alpha');
 $search_login = GETPOST('search_login', 'alpha');
 $search_note = GETPOST('search_note', 'alpha');
-$search_account = GETPOSTINT('search_account');
+$search_account = GETPOST('search_account', 'alpha');
 $search_amount = GETPOST('search_amount', 'alpha');
 $search_all = '';
 
@@ -89,20 +89,20 @@ $search_array_options = $extrafields->getOptionalsFromPost($object->table_elemen
 $fieldstosearchall = array(
 );
 $arrayfields = array(
-	'd.ref'=>array('label'=>"Ref", 'checked'=>1),
-	'd.fk_type'=>array('label'=>"Type", 'checked'=>1),
-	'd.lastname'=>array('label'=>"Lastname", 'checked'=>1),
-	'd.firstname'=>array('label'=>"Firstname", 'checked'=>1),
-	'd.login'=>array('label'=>"Login", 'checked'=>1),
-	't.libelle'=>array('label'=>"Label", 'checked'=>1),
-	'd.bank'=>array('label'=>"BankAccount", 'checked'=>1, 'enabled'=>(isModEnabled('bank'))),
+	'd.ref' => array('label' => "Ref", 'checked' => 1),
+	'd.fk_type' => array('label' => "Type", 'checked' => 1),
+	'd.lastname' => array('label' => "Lastname", 'checked' => 1),
+	'd.firstname' => array('label' => "Firstname", 'checked' => 1),
+	'd.login' => array('label' => "Login", 'checked' => 1),
+	't.libelle' => array('label' => "Label", 'checked' => 1),
+	'd.bank' => array('label' => "BankAccount", 'checked' => 1, 'enabled' => (isModEnabled('bank'))),
 	/*'d.note_public'=>array('label'=>"NotePublic", 'checked'=>0),
 	 'd.note_private'=>array('label'=>"NotePrivate", 'checked'=>0),*/
-	'c.dateadh'=>array('label'=>"DateSubscription", 'checked'=>1, 'position'=>100),
-	'c.datef'=>array('label'=>"EndSubscription", 'checked'=>1, 'position'=>101),
-	'd.amount'=>array('label'=>"Amount", 'checked'=>1, 'position'=>102),
-	'c.datec'=>array('label'=>"DateCreation", 'checked'=>0, 'position'=>500),
-	'c.tms'=>array('label'=>"DateModificationShort", 'checked'=>0, 'position'=>500),
+	'c.dateadh' => array('label' => "DateSubscription", 'checked' => 1, 'position' => 100),
+	'c.datef' => array('label' => "EndSubscription", 'checked' => 1, 'position' => 101),
+	'd.amount' => array('label' => "Amount", 'checked' => 1, 'position' => 102),
+	'c.datec' => array('label' => "DateCreation", 'checked' => 0, 'position' => 500),
+	'c.tms' => array('label' => "DateModificationShort", 'checked' => 0, 'position' => 500),
 //	'd.statut'=>array('label'=>"Status", 'checked'=>1, 'position'=>1000)
 );
 
@@ -124,7 +124,7 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-$parameters = array('socid'=>isset($socid) ? $socid : null);
+$parameters = array('socid' => isset($socid) ? $socid : null);
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) {
 	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
@@ -298,7 +298,7 @@ $arrayofselected = is_array($toselect) ? $toselect : array();
 
 $param = '';
 if (!empty($mode)) {
-	$param .='&mode='.urlencode($mode);
+	$param .= '&mode='.urlencode($mode);
 }
 if (!empty($contextpage) && $contextpage != $_SERVER["PHP_SELF"]) {
 	$param .= '&contextpage='.urlencode($contextpage);
@@ -366,8 +366,8 @@ print '<input type="hidden" name="page_y" value="">';
 print '<input type="hidden" name="mode" value="'.$mode.'">';
 
 $newcardbutton = '';
-$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss'=>'reposition'));
-$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss'=>'reposition'));
+$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss' => 'reposition'));
+$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss' => 'reposition'));
 if ($user->hasRight('adherent', 'cotisation', 'creer')) {
 	$newcardbutton .= dolGetButtonTitleSeparator();
 	$newcardbutton .= dolGetButtonTitle($langs->trans('NewSubscription'), '', 'fa fa-plus-circle', DOL_URL_ROOT.'/adherents/list.php?status=-1,1');
@@ -414,7 +414,8 @@ if (!empty($moreforfilter)) {
 }
 
 $varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
-$selectedfields = ($mode != 'kanban' ? $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage, getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) : ''); // This also change content of $arrayfields
+$htmlofselectarray = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage, getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN'));  // This also change content of $arrayfields with user setup
+$selectedfields = ($mode != 'kanban' ? $htmlofselectarray : '');
 $selectedfields .= (count($arrayofmassactions) ? $form->showCheckAddButtons('checkforselect', 1) : '');
 
 print '<div class="div-table-responsive">'; // You can use div-table-responsive-no-min if you don't need reserved height for your table
@@ -492,7 +493,7 @@ if (!empty($arrayfields['d.amount']['checked'])) {
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_input.tpl.php';
 
 // Fields from hook
-$parameters = array('arrayfields'=>$arrayfields);
+$parameters = array('arrayfields' => $arrayfields);
 $reshook = $hookmanager->executeHooks('printFieldListOption', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 // Date creation
@@ -571,7 +572,7 @@ if (!empty($arrayfields['d.amount']['checked'])) {
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_title.tpl.php';
 
 // Hook fields
-$parameters = array('arrayfields'=>$arrayfields, 'param'=>$param, 'sortfield'=>$sortfield, 'sortorder'=>$sortorder, 'totalarray'=>&$totalarray);
+$parameters = array('arrayfields' => $arrayfields, 'param' => $param, 'sortfield' => $sortfield, 'sortorder' => $sortorder, 'totalarray' => &$totalarray);
 $reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 if (!empty($arrayfields['c.datec']['checked'])) {
@@ -647,7 +648,7 @@ while ($i < $imaxinloop) {
 			$accountstatic->fetch($obj->fk_account);
 		}
 		// Output Kanban
-		print $subscription->getKanbanView('', array('selected' => in_array($object->id, $arrayofselected), 'adherent_type' => $adht, 'member' => $adherent, 'bank'=>($obj->fk_account > 0 ? $accountstatic : null)));
+		print $subscription->getKanbanView('', array('selected' => in_array($object->id, $arrayofselected), 'adherent_type' => $adht, 'member' => $adherent, 'bank' => ($obj->fk_account > 0 ? $accountstatic : null)));
 		if ($i == ($imaxinloop - 1)) {
 			print '</div>';
 			print '</td></tr>';
@@ -770,7 +771,7 @@ while ($i < $imaxinloop) {
 		// Extra fields
 		include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_print_fields.tpl.php';
 		// Fields from hook
-		$parameters = array('arrayfields'=>$arrayfields, 'obj'=>$obj, 'i'=>$i, 'totalarray'=>&$totalarray);
+		$parameters = array('arrayfields' => $arrayfields, 'obj' => $obj, 'i' => $i, 'totalarray' => &$totalarray);
 		$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters); // Note that $action and $object may have been modified by hook
 		print $hookmanager->resPrint;
 		// Date creation
@@ -829,7 +830,7 @@ if ($num == 0) {
 
 $db->free($resql);
 
-$parameters = array('arrayfields'=>$arrayfields, 'sql' => $sql);
+$parameters = array('arrayfields' => $arrayfields, 'sql' => $sql);
 $reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 

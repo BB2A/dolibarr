@@ -1,7 +1,7 @@
 <?php
 /* Copyright (C) 2011-2014  Juanjo Menent           <jmenent@2byte.es>
  * Copyright (C) 2015       Marcos García           <marcosgdf@gmail.com>
- * Copyright (C) 2018       Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2018-2024  Frédéric France         <frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ if ($action == 'add' && !$cancel) {
 	} else {
 		$db->rollback();
 		setEventMessages($object->error, $object->errors, 'errors');
-		$_GET["action"] = "create";
+		$action = "create";
 	}
 }
 
@@ -164,12 +164,12 @@ if ($action == 'create') {
 	// Date of payment
 	print "<tr>";
 	print '<td class="titlefieldcreate fieldrequired">'.$langs->trans("DatePayment").'</td><td>';
-	print $form->selectDate($datep, "datep", '', '', '', 'add', 1, 1);
+	print $form->selectDate($datep, "datep", 0, 0, 0, 'add', 1, 1);
 	print '</td></tr>';
 
 	// End date of period
 	print '<tr><td class="fieldrequired">'.$form->textwithpicto($langs->trans("PeriodEndDate"), $langs->trans("LastDayTaxIsRelatedTo")).'</td><td>';
-	print $form->selectDate($datev, "datev", '', '', '', 'add', 1, 1);
+	print $form->selectDate($datev, "datev", 0, 0, 0, 'add', 1, 1);
 	print '</td></tr>';
 
 	// Label
@@ -187,7 +187,7 @@ if ($action == 'create') {
 
 		// Bank account
 		print '<tr><td class="fieldrequired" id="label_fk_account">'.$langs->trans("BankAccount").'</td><td>';
-		print img_picto('', 'bank_account', 'pictofixedwidth');
+		print img_picto('', 'bank_account', 'class="pictofixedwidth"');
 		$form->select_comptes(GETPOSTINT("accountid"), "accountid", 0, "courant=1", 2, '', 0, 'maxwidth500 widthcentpercentminusx'); // Affiche liste des comptes courant
 		print '</td></tr>';
 
@@ -215,6 +215,7 @@ if ($action == 'create') {
 // View mode
 if ($id) {
 	$h = 0;
+	$head = array();
 	$head[$h][0] = DOL_URL_ROOT.'/compta/localtax/card.php?id='.$object->id;
 	$head[$h][1] = $langs->trans('Card');
 	$head[$h][2] = 'card';

@@ -1,5 +1,7 @@
 <?php
 /* Copyright (C) 2017 Laurent Destailleur	<eldy@users.sourceforge.net>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -506,9 +508,10 @@ function dolWebsiteSaveContent($content)
  * @param 	string	$containeraliasalt	Ref of alternative aliases to redirect to.
  * @param 	int		$containerid		Id of container.
  * @param	int		$permanent			0=Use temporary redirect 302, 1=Use permanent redirect 301
+ * @param 	array	$parameters			Array of parameters to append to the URL.
  * @return  void
  */
-function redirectToContainer($containerref, $containeraliasalt = '', $containerid = 0, $permanent = 0)
+function redirectToContainer($containerref, $containeraliasalt = '', $containerid = 0, $permanent = 0, $parameters = array())
 {
 	global $db, $website;
 
@@ -519,6 +522,7 @@ function redirectToContainer($containerref, $containeraliasalt = '', $containeri
 	if ($containeraliasalt) {
 		include_once DOL_DOCUMENT_ROOT.'/website/class/websitepage.class.php';
 		$tmpwebsitepage = new WebsitePage($db);
+		// @phan-suppress-next-line PhanPluginSuspiciousParamPosition
 		$result = $tmpwebsitepage->fetch(0, $website->id, '', $containeraliasalt);
 		if ($result > 0) {
 			$containerref = $tmpwebsitepage->pageurl;
@@ -542,6 +546,7 @@ function redirectToContainer($containerref, $containeraliasalt = '', $containeri
 		if (!$containeraliasalt) {	// If containeraliasalt set, we already did the test
 			include_once DOL_DOCUMENT_ROOT.'/website/class/websitepage.class.php';
 			$tmpwebsitepage = new WebsitePage($db);
+			// @phan-suppress-next-line PhanPluginSuspiciousParamPosition
 			$result = $tmpwebsitepage->fetch(0, $website->id, $containerref);
 			unset($tmpwebsitepage);
 		}
@@ -565,6 +570,10 @@ function redirectToContainer($containerref, $containeraliasalt = '', $containeri
 	}
 
 	if ($newurl) {
+		if (!empty($parameters)) {
+			$separator = (parse_url($newurl, PHP_URL_QUERY) == null) ? '?' : '&';
+			$newurl = $newurl . $separator . http_build_query($parameters);
+		}
 		if ($permanent) {
 			header("Status: 301 Moved Permanently", false, 301);
 		}
@@ -599,7 +608,7 @@ function includeContainer($containerref)
 	$fullpathfile = DOL_DATA_ROOT.($conf->entity > 1 ? '/'.$conf->entity : '').'/website/'.$websitekey.'/'.$containerref;
 
 	if (empty($includehtmlcontentopened)) {
-		$includehtmlcontentopened = 0;
+		$includehtmlcontentopened = 0;  // @phan-suppress-current-line PhanPluginRedundantAssignment
 	}
 	$includehtmlcontentopened++;
 	if ($includehtmlcontentopened > $MAXLEVEL) {
@@ -614,7 +623,7 @@ function includeContainer($containerref)
 	//print preg_replace(array('/^.*<body[^>]*>/ims','/<\/body>.*$/ims'), array('', ''), $content);*/
 
 	ob_start();
-	$res = include $fullpathfile; // Include because we want to execute code content
+	$res = @include $fullpathfile; // Include because we want to execute code content
 	$tmpoutput = ob_get_contents();
 	ob_end_clean();
 
@@ -833,6 +842,8 @@ function getStructuredData($type, $data = array())
 				}
 			}'."\n";
 		$ret .= '</script>'."\n";
+	} else {
+		$ret = '';
 	}
 	return $ret;
 }
@@ -975,8 +986,8 @@ function getSocialNetworkSharingLinks()
 /**
  * Return HTML content to add structured data for an article, news or Blog Post.
  *
- * @param	Object	$object			Object
- * @return  string					HTML img content or '' if no image found
+ * @param	Object	$object		Object
+ * @return  int					HTML img content or '' if no image found
  * @see getImagePublicURLOfObject()
  */
 function getNbOfImagePublicURLOfObject($object)
@@ -1099,12 +1110,12 @@ function getImagePublicURLOfObject($object, $no = 1, $extName = '')
  * @param	int			$status				0 or 1, or -1 for both
  * @return  array							Array with results of search
  */
-function getPagesFromSearchCriterias($type, $algo, $searchstring, $max = 25, $sortfield = 'date_creation', $sortorder = 'DESC', $langcode = '', $otherfilters = 'null', $status = 1)
+function getPagesFromSearchCriterias($type, $algo, $searchstring, $max = 25, $sortfield = 'date_creation', $sortorder = 'DESC', $langcode = '', $otherfilters = [], $status = 1)
 {
 	global $conf, $db, $hookmanager, $langs, $mysoc, $user, $website, $websitepage, $weblangs; // Very important. Required to have var available when running included containers.
 
 	$error = 0;
-	$arrayresult = array('code'=>'', 'list'=>array());
+	$arrayresult = array('code' => '', 'list' => array());
 
 	if (!is_object($weblangs)) {
 		$weblangs = $langs;
@@ -1212,22 +1223,22 @@ function getPagesFromSearchCriterias($type, $algo, $searchstring, $max = 25, $so
 
 		$filecontent = file_get_contents($filehtmlheader);
 		if ((empty($max) || ($found < $max)) && preg_match('/'.preg_quote($searchstring, '/').'/', $filecontent)) {
-			$arrayresult['list'][] = array('type'=>'website_htmlheadercontent');
+			$arrayresult['list'][] = array('type' => 'website_htmlheadercontent');
 		}
 
 		$filecontent = file_get_contents($filecss);
 		if ((empty($max) || ($found < $max)) && preg_match('/'.preg_quote($searchstring, '/').'/', $filecontent)) {
-			$arrayresult['list'][] = array('type'=>'website_csscontent');
+			$arrayresult['list'][] = array('type' => 'website_csscontent');
 		}
 
 		$filecontent = file_get_contents($filejs);
 		if ((empty($max) || ($found < $max)) && preg_match('/'.preg_quote($searchstring, '/').'/', $filecontent)) {
-			$arrayresult['list'][] = array('type'=>'website_jscontent');
+			$arrayresult['list'][] = array('type' => 'website_jscontent');
 		}
 
 		$filerobot = file_get_contents($filerobot);
 		if ((empty($max) || ($found < $max)) && preg_match('/'.preg_quote($searchstring, '/').'/', $filecontent)) {
-			$arrayresult['list'][] = array('type'=>'website_robotcontent');
+			$arrayresult['list'][] = array('type' => 'website_robotcontent');
 		}
 
 		$searchdone = 1;
@@ -1259,7 +1270,7 @@ function getPagesFromSearchCriterias($type, $algo, $searchstring, $max = 25, $so
  * @param 	string		$urltograb		URL to grab (example: http://www.nltechno.com/ or http://www.nltechno.com/dir1/ or http://www.nltechno.com/dir1/mapage1)
  * @param 	string		$tmp			Content to parse
  * @param 	string		$action			Var $action
- * @param	string		$modifylinks	0=Do not modify content, 1=Replace links with a link to viewimage
+ * @param	int 		$modifylinks	0=Do not modify content, 1=Replace links with a link to viewimage
  * @param	int			$grabimages		0=Do not grab images, 1=Grab images
  * @param	string		$grabimagesinto	'root' or 'subpage'
  * @return	void
@@ -1313,10 +1324,6 @@ function getAllImages($object, $objectpage, $urltograb, &$tmp, &$action, $modify
 		// Clean the aa/bb/../cc into aa/cc
 		$filetosave = preg_replace('/\/[^\/]+\/\.\./', '', $filetosave);
 		$filename = preg_replace('/\/[^\/]+\/\.\./', '', $filename);
-
-		//var_dump($filetosave);
-		//var_dump($filename);
-		//exit;
 
 		if (empty($alreadygrabbed[$urltograbbis])) {
 			if ($grabimages) {
@@ -1382,10 +1389,6 @@ function getAllImages($object, $objectpage, $urltograb, &$tmp, &$action, $modify
 		// Clean the aa/bb/../cc into aa/cc
 		$filetosave = preg_replace('/\/[^\/]+\/\.\./', '', $filetosave);
 		$filename = preg_replace('/\/[^\/]+\/\.\./', '', $filename);
-
-		//var_dump($filetosave);
-		//var_dump($filename);
-		//exit;
 
 		if (empty($alreadygrabbed[$urltograbbis])) {
 			if ($grabimages) {

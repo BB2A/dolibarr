@@ -60,7 +60,7 @@ $socid = GETPOSTINT('socid');
 // Category
 $selected_cat = GETPOSTINT('search_categ');
 if ($selected_cat == -1) {
-	$selected_cat = '';
+	$selected_cat = 0;
 }
 $subcat = false;
 if (GETPOST('subcat', 'alpha') === 'yes') {
@@ -87,7 +87,7 @@ $month = GETPOSTINT("month");
 $search_societe = GETPOST("search_societe", 'alpha');
 $search_zip = GETPOST("search_zip", 'alpha');
 $search_town = GETPOST("search_town", 'alpha');
-$search_country = GETPOST("search_country", 'alpha');
+$search_country = GETPOST("search_country", 'aZ09');
 $date_startyear = GETPOSTINT("date_startyear");
 $date_startmonth = GETPOSTINT("date_startmonth");
 $date_startday = GETPOSTINT("date_startday");
@@ -197,7 +197,7 @@ $allparams = array_merge($commonparams, $headerparams, $tableparams);
 $headerparams = array_merge($commonparams, $headerparams);
 $tableparams = array_merge($commonparams, $tableparams);
 
-$paramslink="";
+$paramslink = "";
 foreach ($allparams as $key => $value) {
 	$paramslink .= '&'.$key.'='.$value;
 }
@@ -221,8 +221,8 @@ if ($modecompta == "BOOKKEEPINGCOLLECTED") {
 	$modecompta = "RECETTES-DEPENSES";
 }
 
-$exportlink="";
-$namelink="";
+$exportlink = "";
+$namelink = "";
 
 // Show report header
 if ($modecompta == "CREANCES-DETTES") {
@@ -354,6 +354,10 @@ $sql .= " ORDER BY s.rowid";
 //echo $sql;
 
 $amount = array();
+$amount_ht = array();
+$address_zip = array();
+$address_town = array();
+$address_pays = array();
 
 dol_syslog("casoc", LOG_DEBUG);
 $result = $db->query($sql);
@@ -635,15 +639,15 @@ if (count($amount)) {
 		print '<td class="tdoverflowmax150">'.$linkname."</td>\n";
 
 		print '<td>';
-		print $address_pays($address_zip[$key]);
+		print $address_zip[$key];
 		print '</td>';
 
 		print '<td class="tdoverflowmax150" title="'.dol_escape_htmltag($address_town[$key]).'">';
-		print $address_pays($address_town[$key]);
+		print $address_town[$key];
 		print '</td>';
 
 		print '<td class="tdoverflowmax150" title="'.dol_escape_htmltag($address_pays[$key]).'">';
-		print $address_pays($address_pays[$key]);
+		print $address_pays[$key];
 		print '</td>';
 
 		// Amount w/o VAT

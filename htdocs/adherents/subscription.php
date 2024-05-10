@@ -4,7 +4,7 @@
  * Copyright (C) 2004-2018  Laurent Destailleur     <eldy@users.sourceforge.net>
  * Copyright (C) 2012-2017  Regis Houssin           <regis.houssin@inodbox.com>
  * Copyright (C) 2015-2016  Alexandre Spangaro      <aspangaro@open-dsi.fr>
- * Copyright (C) 2018-2023  Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2018-2024  Frédéric France         <frederic.france@free.fr>
  * Copyright (C) 2019       Thibault FOUCART        <support@ptibogxiv.net>
  * Copyright (C) 2023		Waël Almoman			<info@almoman.com>
  *
@@ -421,11 +421,11 @@ if ($user->hasRight('adherent', 'cotisation', 'creer') && $action == 'subscripti
 
 		// Clean some POST vars
 		if (!$error) {
-			$_POST["subscription"] = '';
-			$_POST["accountid"] = '';
-			$_POST["operation"] = '';
-			$_POST["label"] = '';
-			$_POST["num_chq"] = '';
+			$accountid = '';
+			$operation = '';
+			$label = '';
+			$num_chq = '';
+			$option = '';
 		}
 	}
 }
@@ -996,7 +996,7 @@ if (($action == 'addsubscription' || $action == 'create_thirdparty') && $user->h
 			$datefrom = dol_get_first_day(dol_print_date($datefrom, "%Y"));
 		}
 	}
-	print $form->selectDate($datefrom, '', '', '', '', "subscription", 1, 1);
+	print $form->selectDate($datefrom, '', 0, 0, 0, "subscription", 1, 1);
 	print "</td></tr>";
 
 	// Date end subscription
@@ -1013,7 +1013,7 @@ if (($action == 'addsubscription' || $action == 'create_thirdparty') && $user->h
 		}
 	}
 	print '<tr><td>'.$langs->trans("DateEndSubscription").'</td><td>';
-	print $form->selectDate($dateto, 'end', '', '', '', "subscription", 1, 0);
+	print $form->selectDate($dateto, 'end', 0, 0, 0, "subscription", 1, 0);
 	print "</td></tr>";
 
 	if ($adht->subscription) {
@@ -1097,7 +1097,7 @@ if (($action == 'addsubscription' || $action == 'create_thirdparty') && $user->h
 				if (!getDolGlobalString('ADHERENT_VAT_FOR_SUBSCRIPTIONS') || getDolGlobalString('ADHERENT_VAT_FOR_SUBSCRIPTIONS') != 'defaultforfoundationcountry') {
 					print '. <span class="opacitymedium">'.$langs->trans("NoVatOnSubscription", 0).'</span>';
 				}
-				if (getDolGlobalString('ADHERENT_PRODUCT_ID_FOR_SUBSCRIPTIONS') && (isModEnabled('product')|| isModEnabled('service'))) {
+				if (getDolGlobalString('ADHERENT_PRODUCT_ID_FOR_SUBSCRIPTIONS') && (isModEnabled('product') || isModEnabled('service'))) {
 					$prodtmp = new Product($db);
 					$result = $prodtmp->fetch(getDolGlobalString('ADHERENT_PRODUCT_ID_FOR_SUBSCRIPTIONS'));
 					if ($result < 0) {
@@ -1111,7 +1111,7 @@ if (($action == 'addsubscription' || $action == 'create_thirdparty') && $user->h
 
 			// Bank account
 			print '<tr class="bankswitchclass"><td class="fieldrequired">'.$langs->trans("FinancialAccount").'</td><td>';
-			print img_picto('', 'bank_account');
+			print img_picto('', 'bank_account', 'class="pictofixedwidth"');
 			$form->select_comptes(GETPOST('accountid'), 'accountid', 0, '', 2, '', 0, 'minwidth200');
 			print "</td></tr>\n";
 
@@ -1201,6 +1201,7 @@ if (($action == 'addsubscription' || $action == 'create_thirdparty') && $user->h
 			$langs->load("errors");
 			$helpcontent .= '<span class="error">'.$langs->trans("ErrorModuleSetupNotComplete", $langs->transnoentitiesnoconv("Module310Name")).'</span>'."\n";
 		}
+		// @phan-suppress-next-line PhanPluginSuspiciousParamOrder
 		print $form->textwithpicto($tmp, $helpcontent, 1, 'help', '', 0, 2, 'helpemailtosend');
 	}
 	print '</td></tr>';

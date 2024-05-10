@@ -3,6 +3,7 @@
  * Copyright (C) 2005-2023 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2010 Regis Houssin        <regis.houssin@inodbox.com>
  * Copyright (C) 2014	   Florian Henry        <florian.henry@open-concept.pro>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +63,7 @@ $search_lastname = GETPOST("search_lastname", 'alphanohtml');
 $search_firstname = GETPOST("search_firstname", 'alphanohtml');
 $search_email = GETPOST("search_email", 'alphanohtml');
 $search_other = GETPOST("search_other", 'alphanohtml');
-$search_dest_status = GETPOST('search_dest_status');	// Must be '' if not set, so do not use GETPOSTINT here.
+$search_dest_status = GETPOST('search_dest_status', 'int');
 
 // Search modules dirs
 $modulesdir = dolGetModulesDirs('/mailings');
@@ -278,21 +279,21 @@ if ($object->fetch($id) >= 0) {
 	$morehtmlref .= $form->editfieldval("", 'title', $object->title, $object, 0, 'string', '', null, null, '', 1);
 	$morehtmlref .= '</div>';
 
-	$morehtmlright = '';
+	$morehtmlstatus = '';
 	$nbtry = $nbok = 0;
 	if ($object->status == $object::STATUS_SENTPARTIALY || $object->status == $object::STATUS_SENTCOMPLETELY) {
 		$nbtry = $object->countNbOfTargets('alreadysent');
 		$nbko  = $object->countNbOfTargets('alreadysentko');
 		$nbok = ($nbtry - $nbko);
 
-		$morehtmlright .= ' ('.$nbtry.'/'.$object->nbemail;
+		$morehtmlstatus .= ' ('.$nbtry.'/'.$object->nbemail;
 		if ($nbko) {
-			$morehtmlright .= ' - '.$nbko.' '.$langs->trans("Error");
+			$morehtmlstatus .= ' - '.$nbko.' '.$langs->trans("Error");
 		}
-		$morehtmlright .= ') &nbsp; ';
+		$morehtmlstatus .= ') &nbsp; ';
 	}
 
-	dol_banner_tab($object, 'id', $linkback, 1, 'rowid', 'ref', $morehtmlref, '', 0, '', $morehtmlright);
+	dol_banner_tab($object, 'id', $linkback, 1, 'rowid', 'ref', $morehtmlref, '', 0, '', $morehtmlstatus);
 
 	print '<div class="fichecenter">';
 	print '<div class="fichehalfleft">';
@@ -364,6 +365,7 @@ if ($object->fetch($id) >= 0) {
 			$nbemail .= ' '.img_warning($langs->trans('ToAddRecipientsChooseHere'));//.' <span class="warning">'.$langs->trans("NoTargetYet").'</span>';
 		}
 		if ($text) {
+			// @phan-suppress-next-line PhanPluginSuspiciousParamPosition
 			print $form->textwithpicto($nbemail, $text, 1, 'warning');
 		} else {
 			print $nbemail;
@@ -480,7 +482,7 @@ if ($object->fetch($id) >= 0) {
 				$obj = new $classname($db);
 
 				// Check if qualified
-				$qualified = (is_null($obj->enabled) ? 1 : dol_eval($obj->enabled, 1));
+				$qualified = (is_null($obj->enabled) ? 1 : (int) dol_eval($obj->enabled, 1));
 
 				// Check dependencies
 				foreach ($obj->require_module as $key) {
@@ -677,6 +679,7 @@ if ($object->fetch($id) >= 0) {
 
 		$massactionbutton = '';
 
+		// @phan-suppress-next-line PhanPluginSuspiciousParamOrder
 		print_barre_liste($langs->trans("MailSelectedRecipients"), $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $morehtmlcenter, $num, $nbtotalofrecords, 'generic', 0, $newcardbutton, '', $limit, 0, 0, 1);
 
 		print '</form>';
@@ -751,7 +754,7 @@ if ($object->fetch($id) >= 0) {
 		print '</tr>';
 
 		if ($page) {
-			$param .= "&page=".urlencode($page);
+			$param .= "&page=".urlencode((string) ($page));
 		}
 
 		print '<tr class="liste_titre">';

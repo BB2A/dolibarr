@@ -13,6 +13,7 @@
  * Copyright (C) 2021       Charlene Benke          <charlene@patas-monkey.com>
  * Copyright (C) 2022       Udo Tamm				<dev@dolibit.de>
  * Copyright (C) 2023       Sylvain Legrand			<technique@infras.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +62,7 @@ $month = GETPOSTINT('month');
 $year = GETPOSTINT('year');
 
 $search_ref = GETPOST('search_ref', 'alpha');
-$search_account = GETPOSTINT('search_account');
+$search_account = GETPOST('search_account', 'alpha');
 $search_paymenttype = GETPOST('search_paymenttype');
 $search_amount = GETPOST('search_amount', 'alpha'); // alpha because we must be able to search on "< x"
 $search_company = GETPOST('search_company', 'alpha');
@@ -140,7 +141,7 @@ if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter.x'
 	$search_array_options = array();
 }
 
-$parameters = array('socid'=>$socid);
+$parameters = array('socid' => $socid);
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) {
 	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
@@ -155,6 +156,7 @@ if (empty($reshook)) {
 		$totalpayment = 0;
 		$atleastonepaymentnotnull = 0;
 		$multicurrency_totalpayment = 0;
+		$formquestion = array();
 
 		// Generate payment array and check if there is payment higher than invoice and payment date before invoice date
 		$tmpinvoice = new FactureFournisseur($db);
@@ -165,7 +167,7 @@ if (empty($reshook)) {
 				if (!empty($amounts[$cursorfacid])) {
 					$atleastonepaymentnotnull++;
 					if (is_numeric($amounts[$cursorfacid])) {
-						$totalpayment = $totalpayment + $amounts[$cursorfacid];
+						$totalpayment += (float) $amounts[$cursorfacid];
 					} else {
 						setEventMessages($langs->transnoentities("InputValueIsNotAnNumber", GETPOST($key)), null, 'warnings');
 					}
@@ -177,7 +179,7 @@ if (empty($reshook)) {
 				$amountsresttopay[$cursorfacid] = price2num($tmpinvoice->total_ttc - $tmpinvoice->getSommePaiement());
 				if ($amounts[$cursorfacid]) {
 					// Check amount
-					if ($amounts[$cursorfacid] && (abs($amounts[$cursorfacid]) > abs($amountsresttopay[$cursorfacid]))) {
+					if ($amounts[$cursorfacid] && (abs((float) $amounts[$cursorfacid]) > abs((float) $amountsresttopay[$cursorfacid]))) {
 						$addwarning = 1;
 						$formquestion['text'] = img_warning($langs->trans("PaymentHigherThanReminderToPaySupplier")).' '.$langs->trans("HelpPaymentHigherThanReminderToPaySupplier");
 					}
@@ -204,7 +206,7 @@ if (empty($reshook)) {
 				$multicurrency_amountsresttopay[$cursorfacid] = price2num($tmpinvoice->multicurrency_total_ttc - $tmpinvoice->getSommePaiement(1));
 				if ($multicurrency_amounts[$cursorfacid]) {
 					// Check amount
-					if ($multicurrency_amounts[$cursorfacid] && (abs($multicurrency_amounts[$cursorfacid]) > abs($multicurrency_amountsresttopay[$cursorfacid]))) {
+					if ($multicurrency_amounts[$cursorfacid] && (abs((float) $multicurrency_amounts[$cursorfacid]) > abs((float) $multicurrency_amountsresttopay[$cursorfacid]))) {
 						$addwarning = 1;
 						$formquestion['text'] = img_warning($langs->trans("PaymentHigherThanReminderToPaySupplier")).' '.$langs->trans("HelpPaymentHigherThanReminderToPaySupplier");
 					}
@@ -279,7 +281,7 @@ if (empty($reshook)) {
 			$tmpinvoice->fetch($key);
 			if ($tmpinvoice->type == FactureFournisseur::TYPE_CREDIT_NOTE) {
 				$newvalue = price2num($value, 'MT');
-				$amounts[$key] = - abs($newvalue);
+				$amounts[$key] = - abs((float) $newvalue);
 			}
 			$multicurrency_code[$key] = $tmpinvoice->multicurrency_code;
 			$multicurrency_tx[$key] = $tmpinvoice->multicurrency_tx;
@@ -290,7 +292,7 @@ if (empty($reshook)) {
 			$tmpinvoice->fetch($key);
 			if ($tmpinvoice->type == FactureFournisseur::TYPE_CREDIT_NOTE) {
 				$newvalue = price2num($value, 'MT');
-				$multicurrency_amounts[$key] = - abs($newvalue);
+				$multicurrency_amounts[$key] = - abs((float) $newvalue);
 			}
 			$multicurrency_code[$key] = $tmpinvoice->multicurrency_code;
 			$multicurrency_tx[$key] = $tmpinvoice->multicurrency_tx;
@@ -484,7 +486,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
 				//Add js for AutoFill
 				print ' $(document).ready(function () {';
-				print ' 	$(".AutoFillAmout").on(\'click touchstart\', function(){
+				print ' 	$(".AutoFillAmount").on(\'click touchstart\', function(){
 							$("input[name="+$(this).data(\'rowname\')+"]").val($(this).data("value")).trigger("change");
 						});';
 				print '	});'."\n";
@@ -513,9 +515,9 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
 			print '<tr><td class="fieldrequired">'.$langs->trans('Date').'</td><td>';
 			// $object is default vendor invoice
-			$adddateof = array(array('adddateof'=>$object->date));
-			$adddateof[] = array('adddateof'=>$object->date_echeance, 'labeladddateof'=>$langs->transnoentities('DateDue'));
-			print $form->selectDate($dateinvoice, '', '', '', 0, "addpaiement", 1, 1, 0, '', '', $adddateof);
+			$adddateof = array(array('adddateof' => $object->date));
+			$adddateof[] = array('adddateof' => $object->date_echeance, 'labeladddateof' => $langs->transnoentities('DateDue'));
+			print $form->selectDate($dateinvoice, '', 0, 0, 0, "addpaiement", 1, 1, 0, '', '', $adddateof);
 			print '</td></tr>';
 			print '<tr><td class="fieldrequired">'.$langs->trans('PaymentMode').'</td><td>';
 			$form->select_types_paiements(!GETPOST('paiementid') ? $obj->fk_mode_reglement : GETPOST('paiementid'), 'paiementid');
@@ -536,7 +538,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 			print dol_get_fiche_end();
 
 
-			$parameters = array('facid'=>$facid, 'ref'=>$ref, 'objcanvas'=>$objcanvas);
+			$parameters = array('facid' => $facid, 'ref' => $ref, 'objcanvas' => $objcanvas);
 			$reshook = $hookmanager->executeHooks('paymentsupplierinvoices', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 			$error = $hookmanager->error;
 			$errors = $hookmanager->errors;
@@ -577,7 +579,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 							//Add js for AutoFill
 							print "\n".'<script type="text/javascript">';
 							print ' $(document).ready(function () {';
-							print ' 	$(".AutoFillAmout").on(\'click touchstart\', function(){
+							print ' 	$(".AutoFillAmount").on(\'click touchstart\', function(){
 											$("input[name="+$(this).data(\'rowname\')+"]").val($(this).data("value"));
 										});';
 							print '	});'."\n";
@@ -696,7 +698,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
 								print '<td class="right">';
 								if ($objp->multicurrency_code && $objp->multicurrency_code != $conf->currency) {
-									print price($sign * $multicurrency_remaintopay);
+									print price($sign * (float) $multicurrency_remaintopay);
 								}
 								print '</td>';
 
@@ -707,7 +709,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 								if ($objp->multicurrency_code && $objp->multicurrency_code != $conf->currency) {
 									if ($action != 'add_paiement') {
 										if (!empty($conf->use_javascript_ajax)) {
-											print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmout' data-rowname='".$namef."' data-value='".($sign * $multicurrency_remaintopay)."'");
+											print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmount' data-rowname='".$namef."' data-value='".($sign * (float) $multicurrency_remaintopay)."'");
 										}
 										print '<input type=hidden class="multicurrency_remain" name="'.$nameRemain.'" value="'.$multicurrency_remaintopay.'">';
 										print '<input type="text" size="8" class="multicurrency_amount" name="'.$namef.'" value="'.GETPOST($namef).'">';
@@ -731,7 +733,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 							print '</td>';
 
 							print '<td class="right">';
-							print price($sign * $remaintopay);
+							print price($sign * (float) $remaintopay);
 							if (isModEnabled('paymentbybanktransfer')) {
 								$numdirectdebitopen = 0;
 								$totaldirectdebit = 0;
@@ -764,7 +766,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
 							if ($action != 'add_paiement') {
 								if (!empty($conf->use_javascript_ajax)) {
-									print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmout' data-rowname='".$namef."' data-value='".($sign * $remaintopay)."'");
+									print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmount' data-rowname='".$namef."' data-value='".($sign * (float) $remaintopay)."'");
 								}
 								print '<input type="hidden" class="remain" name="'.$nameRemain.'" value="'.$remaintopay.'">';
 								print '<input type="text" size="8" class="amount" name="'.$namef.'" value="'.dol_escape_htmltag(GETPOST($namef)).'">'; // class is required to be used by javascript callForResult();
@@ -802,7 +804,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 								print '+'.price($totalrecudeposits);
 							}
 							print	'</b></td>';
-							print '<td class="right"><b>'.price($sign * price2num($total_ttc - $totalrecu - $totalrecucreditnote - $totalrecudeposits, 'MT')).'</b></td>';
+							print '<td class="right"><b>'.price($sign * (float) price2num($total_ttc - $totalrecu - $totalrecucreditnote - $totalrecudeposits, 'MT')).'</b></td>';
 							print '<td class="center" id="result" style="font-weight: bold;"></td>'; // Autofilled
 							print "</tr>\n";
 						}

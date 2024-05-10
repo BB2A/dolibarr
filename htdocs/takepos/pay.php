@@ -1,6 +1,7 @@
 <?php
 /* Copyright (C) 2018		Andreu Bisquerra	<jove@bisquerra.com>
  * Copyright (C) 2021-2022	Thibault FOUCART	<support@ptibogxiv.net>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +70,7 @@ $title = '';
 $disablejs = 0;
 $disablehead = 0;
 
-$head='<link rel="stylesheet" href="css/pos.css.php">';
+$head = '<link rel="stylesheet" href="css/pos.css.php">';
 if (getDolGlobalInt('TAKEPOS_COLOR_THEME') == 1) {
 	$head .= '<link rel="stylesheet" href="css/colorful.css">';
 }
@@ -122,7 +123,7 @@ function unexpectedDisconnect() {
 
 function fetchConnectionToken() {
 		<?php
-		$urlconnexiontoken = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=getConnexionToken&token='.newToken().'&servicestatus='.urlencode($servicestatus);
+		$urlconnexiontoken = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=getConnexionToken&token='.newToken().'&servicestatus='.urlencode((string) ($servicestatus));
 		if (getDolGlobalString('STRIPE_LOCATION')) {
 			$urlconnexiontoken .= '&location='.urlencode(getDolGlobalString('STRIPE_LOCATION'));
 		}
@@ -152,7 +153,9 @@ $invoice = new Facture($db);
 if ($invoiceid > 0) {
 	$invoice->fetch($invoiceid);
 } else {
-	$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."facture where ref='(PROV-POS".$_SESSION["takeposterminal"]."-".$place.")'";
+	$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."facture";
+	$sql .= " WHERE entity IN (".getEntity('invoice').")";
+	$sql .= " AND ref = '(PROV-POS".$_SESSION["takeposterminal"]."-".$place.")'";
 	$resql = $db->query($sql);
 	$obj = $db->fetch_object($resql);
 	if ($obj) {
@@ -218,8 +221,8 @@ if ($usestripeterminals && $invoice->type != $invoice::TYPE_CREDIT_NOTE) {
 </script>
 <?php
 
-// Define list of possible payments
-$arrayOfValidPaymentModes = array();
+	// Define list of possible payments
+	$arrayOfValidPaymentModes = array();
 $arrayOfValidBankAccount = array();
 
 $sql = "SELECT code, libelle as label FROM ".MAIN_DB_PREFIX."c_paiement";
@@ -362,7 +365,7 @@ if (!getDolGlobalInt("TAKEPOS_NUMPAD")) {
 	function fetchPaymentIntentClientSecret(amount, invoiceid) {
 	  const bodyContent = JSON.stringify({ amount : amount, invoiceid : invoiceid });
   <?php
-	$urlpaymentintent = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=createPaymentIntent&token='.newToken().'&servicestatus='.$servicestatus;
+	$urlpaymentintent = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=createPaymentIntent&token='.newToken().'&servicestatus='.urlencode((string) $servicestatus);
 	if (!empty($stripeacc)) {
 		$urlpaymentintent .= '&stripeacc='.$stripeacc;
 	}
@@ -386,7 +389,7 @@ if (!getDolGlobalInt("TAKEPOS_NUMPAD")) {
 	function capturePaymentIntent(paymentIntentId) {
 	const bodyContent = JSON.stringify({"id": paymentIntentId})
   <?php
-	$urlpaymentintent = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=capturePaymentIntent&token='.newToken().'&servicestatus='.urlencode($servicestatus);
+	$urlpaymentintent = DOL_URL_ROOT.'/stripe/ajax/ajax.php?action=capturePaymentIntent&token='.newToken().'&servicestatus='.urlencode((string) ($servicestatus));
 	if (!empty($stripeacc)) {
 		$urlpaymentintent .= '&stripeacc='.urlencode($stripeacc);
 	}
@@ -508,11 +511,11 @@ if (!getDolGlobalInt("TAKEPOS_NUMPAD")) {
 
 <?php
 if (getDolGlobalString('TAKEPOS_CUSTOMER_DISPLAY')) {
-		echo "var line1='".$langs->trans('TotalTTC')."'.substring(0,20);";
-		echo "line1=line1.padEnd(20);";
-		echo "var line2='".price($invoice->total_ttc, 1, '', 1, -1, -1)."'.substring(0,20);";
-		echo "line2=line2.padEnd(20);";
-		echo "$.ajax({
+	echo "var line1='".$langs->trans('TotalTTC')."'.substring(0,20);";
+	echo "line1=line1.padEnd(20);";
+	echo "var line2='".price($invoice->total_ttc, 1, '', 1, -1, -1)."'.substring(0,20);";
+	echo "line2=line2.padEnd(20);";
+	echo "$.ajax({
 		type: 'GET',
 		data: { text: line1+line2 },
 		url: '".getDolGlobalString('TAKEPOS_PRINT_SERVER')."/display/index.php',
@@ -523,12 +526,13 @@ if (getDolGlobalString('TAKEPOS_CUSTOMER_DISPLAY')) {
 
 <?php
 $showothercurrency = 0;
-if (isModEnabled('multicurrency') && $_SESSION["takeposcustomercurrency"] != "" && $conf->currency != $_SESSION["takeposcustomercurrency"]) {
-	//Only show customer currency if multicurrency module is enabled, if currency selected and if this currency selected is not the same as main currency
+$sessioncurrency = $_SESSION["takeposcustomercurrency"] ?? '';
+if (isModEnabled('multicurrency') && $sessioncurrency != "" && $conf->currency != $sessioncurrency) {
+	// Only show customer currency if multicurrency module is enabled, if currency selected and if this currency selected is not the same as main currency
 	$showothercurrency = 1;
 	include_once DOL_DOCUMENT_ROOT . '/multicurrency/class/multicurrency.class.php';
 	$multicurrency = new MultiCurrency($db);
-	$multicurrency->fetch(0, $_SESSION["takeposcustomercurrency"]);
+	$multicurrency->fetch(0, $sessioncurrency);
 }
 ?>
 
@@ -537,7 +541,7 @@ if (isModEnabled('multicurrency') && $_SESSION["takeposcustomercurrency"] != "" 
 		<span class="takepospay colorwhite"><?php echo $langs->trans('TotalTTC'); ?>: <span id="totaldisplay" class="colorwhite"><?php
 		echo price($invoice->total_ttc, 1, '', 1, -1, -1, $conf->currency);
 		if ($showothercurrency) {
-			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price($invoice->total_ht * $multicurrency->rate->rate) . ' ' . $_SESSION["takeposcustomercurrency"] . ')</span>';
+			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price($invoice->total_ht * $multicurrency->rate->rate) . ' ' . $sessioncurrency . ')</span>';
 		}
 		?></span></span>
 	</div>
@@ -546,24 +550,24 @@ if (isModEnabled('multicurrency') && $_SESSION["takeposcustomercurrency"] != "" 
 			<span class="takepospay colorwhite"><?php echo $langs->trans('RemainToPay'); ?>: <span id="remaintopaydisplay" class="colorwhite"><?php
 			echo price($remaintopay, 1, '', 1, -1, -1, $invoice->multicurrency_code);
 			if ($showothercurrency) {
-				print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price($remaintopay * $multicurrency->rate->rate) . ' ' . $_SESSION["takeposcustomercurrency"] . ')</span>';
+				print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price($remaintopay * $multicurrency->rate->rate) . ' ' . $sessioncurrency . ')</span>';
 			}
 			?></span></span>
 		</div>
 	<?php } ?>
 	<div class="paymentbordline paymentbordlinereceived center">
 		<span class="takepospay colorwhite"><?php echo $langs->trans("Received"); ?>: <span class="change1 colorred"><?php
-			echo price(0, 1, '', 1, -1, -1, $invoice->multicurrency_code);
+		echo price(0, 1, '', 1, -1, -1, $invoice->multicurrency_code);
 		if ($showothercurrency) {
-			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price(0 * $multicurrency->rate->rate) . ' ' . $_SESSION["takeposcustomercurrency"] . ')</span>';
+			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price(0 * $multicurrency->rate->rate) . ' ' . $sessioncurrency . ')</span>';
 		}
 		?></span><input type="hidden" id="change1" class="change1" value="0"></span>
 	</div>
 	<div class="paymentbordline paymentbordlinechange center">
 		<span class="takepospay colorwhite"><?php echo $langs->trans("Change"); ?>: <span class="change2 colorwhite"><?php
-			echo price(0, 1, '', 1, -1, -1, $invoice->multicurrency_code);
+		echo price(0, 1, '', 1, -1, -1, $invoice->multicurrency_code);
 		if ($showothercurrency) {
-			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price(0 * $multicurrency->rate->rate) . ' ' . $_SESSION["takeposcustomercurrency"] . ')</span>';
+			print ' &nbsp; <span id="linecolht-span-total opacitymedium" style="font-size:0.9em; font-style:italic;">(' . price(0 * $multicurrency->rate->rate) . ' ' . $sessioncurrency . ')</span>';
 		}
 		?></span><input type="hidden" id="change2" class="change2" value="0"></span>
 	</div>
@@ -583,18 +587,18 @@ if (isModEnabled('multicurrency') && $_SESSION["takeposcustomercurrency"] != "" 
 <div style="position:absolute; left:5%; height:52%; width:90%;">
 <?php
 $action_buttons = array(
-	array(
-		"function" =>"reset()",
-		"span" => "style='font-size: 150%;'",
-		"text" => "C",
-		"class" => "poscolorblue"
-	),
-	array(
-		"function" => "parent.$.colorbox.close();",
-		"span" => "id='printtext' style='font-weight: bold; font-size: 18pt;'",
-		"text" => "X",
-		"class" => "poscolordelete"
-	),
+array(
+	"function" => "reset()",
+	"span" => "style='font-size: 150%;'",
+	"text" => "C",
+	"class" => "poscolorblue"
+),
+array(
+	"function" => "parent.$.colorbox.close();",
+	"span" => "id='printtext' style='font-weight: bold; font-size: 18pt;'",
+	"text" => "X",
+	"class" => "poscolordelete"
+),
 );
 $numpad = getDolGlobalString('TAKEPOS_NUMPAD');
 if (isModEnabled('stripe') && isset($keyforstripeterminalbank) && getDolGlobalString('STRIPE_CARD_PRESENT')) {
@@ -748,7 +752,7 @@ if (getDolGlobalString('TAKEPOS_DELAYED_PAYMENT')) {
 
 <?php
 // Add code from hooks
-$parameters=array();
+$parameters = array();
 $hookmanager->executeHooks('completePayment', $parameters, $invoice);
 print $hookmanager->resPrint;
 ?>

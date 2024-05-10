@@ -73,7 +73,7 @@ class FormAdmin
 	public function select_language($selected = '', $htmlname = 'lang_id', $showauto = 0, $filter = array(), $showempty = '', $showwarning = 0, $disabled = 0, $morecss = '', $showcode = 0, $forcecombo = 0, $multiselect = 0, $onlykeys = array(), $mainlangonly = 0)
 	{
 		// phpcs:enable
-		global $conf, $langs;
+		global $langs;
 
 		if (getDolGlobalString('MAIN_DEFAULT_LANGUAGE_FILTER')) {
 			if (!is_array($filter)) {
@@ -234,10 +234,16 @@ class FormAdmin
 									$prefix = '3';
 								}
 
+								$morelabel = '';
+								if (preg_match('/^auguria/i', $file)) {
+									$morelabel .= ' <span class="opacitymedium">('.$langs->trans("Unstable").')</span>';
+								}
 								if ($file == $selected) {
-									$menuarray[$prefix.'_'.$file] = '<option value="'.$file.'" selected>'.$filelib.'</option>';
+									$menuarray[$prefix.'_'.$file] = '<option value="'.$file.'" selected data-html="'.dol_escape_htmltag($filelib.$morelabel).'">'.$filelib.$morelabel;
+									$menuarray[$prefix.'_'.$file] .= '</option>';
 								} else {
-									$menuarray[$prefix.'_'.$file] = '<option value="'.$file.'">'.$filelib.'</option>';
+									$menuarray[$prefix.'_'.$file] = '<option value="'.$file.'" data-html="'.dol_escape_htmltag($filelib.$morelabel).'">'.$filelib.$morelabel;
+									$menuarray[$prefix.'_'.$file] .= '</option>';
 								}
 							}
 						}
@@ -254,6 +260,7 @@ class FormAdmin
 		foreach ($menuarray as $key => $val) {
 			$tab = explode('_', $key);
 			$newprefix = $tab[0];
+
 			if ($newprefix == '1' && (getDolGlobalInt('MAIN_FEATURES_LEVEL') < 1)) {
 				continue;
 			}
@@ -262,7 +269,7 @@ class FormAdmin
 			}
 			if ($newprefix != $oldprefix) {	// Add separators
 				// Affiche titre
-				print '<option value="-1" disabled>';
+				print '<option value="-2" disabled>';
 				if ($newprefix == '0') {
 					print '-- '.$langs->trans("VersionRecommanded").' --';
 				}
@@ -278,9 +285,12 @@ class FormAdmin
 				print '</option>';
 				$oldprefix = $newprefix;
 			}
-			print $val."\n"; // Show menu entry
+
+			print $val."\n"; // Show menu entry ($val contains the <option> tags
 		}
 		print '</select>';
+
+		print ajax_combobox($htmlname);
 
 		return;
 	}
@@ -380,31 +390,31 @@ class FormAdmin
 		print '<option value="-1">&nbsp;</option>';
 
 		$arraytz = array(
-			"Pacific/Midway"=>"GMT-11:00",
-			"Pacific/Fakaofo"=>"GMT-10:00",
-			"America/Anchorage"=>"GMT-09:00",
-			"America/Los_Angeles"=>"GMT-08:00",
-			"America/Dawson_Creek"=>"GMT-07:00",
-			"America/Chicago"=>"GMT-06:00",
-			"America/Bogota"=>"GMT-05:00",
-			"America/Anguilla"=>"GMT-04:00",
-			"America/Araguaina"=>"GMT-03:00",
-			"America/Noronha"=>"GMT-02:00",
-			"Atlantic/Azores"=>"GMT-01:00",
-			"Africa/Abidjan"=>"GMT+00:00",
-			"Europe/Paris"=>"GMT+01:00",
-			"Europe/Helsinki"=>"GMT+02:00",
-			"Europe/Moscow"=>"GMT+03:00",
-			"Asia/Dubai"=>"GMT+04:00",
-			"Asia/Karachi"=>"GMT+05:00",
-			"Indian/Chagos"=>"GMT+06:00",
-			"Asia/Jakarta"=>"GMT+07:00",
-			"Asia/Hong_Kong"=>"GMT+08:00",
-			"Asia/Tokyo"=>"GMT+09:00",
-			"Australia/Sydney"=>"GMT+10:00",
-			"Pacific/Noumea"=>"GMT+11:00",
-			"Pacific/Auckland"=>"GMT+12:00",
-			"Pacific/Enderbury"=>"GMT+13:00"
+			"Pacific/Midway" => "GMT-11:00",
+			"Pacific/Fakaofo" => "GMT-10:00",
+			"America/Anchorage" => "GMT-09:00",
+			"America/Los_Angeles" => "GMT-08:00",
+			"America/Dawson_Creek" => "GMT-07:00",
+			"America/Chicago" => "GMT-06:00",
+			"America/Bogota" => "GMT-05:00",
+			"America/Anguilla" => "GMT-04:00",
+			"America/Araguaina" => "GMT-03:00",
+			"America/Noronha" => "GMT-02:00",
+			"Atlantic/Azores" => "GMT-01:00",
+			"Africa/Abidjan" => "GMT+00:00",
+			"Europe/Paris" => "GMT+01:00",
+			"Europe/Helsinki" => "GMT+02:00",
+			"Europe/Moscow" => "GMT+03:00",
+			"Asia/Dubai" => "GMT+04:00",
+			"Asia/Karachi" => "GMT+05:00",
+			"Indian/Chagos" => "GMT+06:00",
+			"Asia/Jakarta" => "GMT+07:00",
+			"Asia/Hong_Kong" => "GMT+08:00",
+			"Asia/Tokyo" => "GMT+09:00",
+			"Australia/Sydney" => "GMT+10:00",
+			"Pacific/Noumea" => "GMT+11:00",
+			"Pacific/Auckland" => "GMT+12:00",
+			"Pacific/Enderbury" => "GMT+13:00"
 		);
 		foreach ($arraytz as $lib => $gmt) {
 			print '<option value="'.$lib.'"';
@@ -442,6 +452,8 @@ class FormAdmin
 		if ($filter) {
 			$sql .= " AND code LIKE '%".$this->db->escape($filter)."%'";
 		}
+
+		$paperformat = array();
 
 		$resql = $this->db->query($sql);
 		if ($resql) {

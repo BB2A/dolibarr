@@ -36,6 +36,7 @@
 require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/client.class.php';
 require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
@@ -51,7 +52,7 @@ if (isModEnabled("propal")) {
 if (isModEnabled('order')) {
 	require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 }
-if (isModEnabled("delivery_note")) {
+if (isModEnabled("shipping")) {
 	require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 }
 if (isModEnabled('contract')) {
@@ -73,7 +74,7 @@ if (isModEnabled('contract')) {
 if (isModEnabled('order')) {
 	$langs->load("orders");
 }
-if (isModEnabled("delivery_note")) {
+if (isModEnabled("shipping")) {
 	$langs->load("sendings");
 }
 if (isModEnabled('invoice')) {
@@ -312,14 +313,13 @@ $form = new Form($db);
 $formcompany = new FormCompany($db);
 
 $title = $langs->trans("ThirdParty")." - ".$langs->trans('Customer');
-if (getDolGlobalString('MAIN_HTML_TITLE') && preg_match('/thirdpartynameonly/', $conf->global->MAIN_HTML_TITLE) && $object->name) {
+if (getDolGlobalString('MAIN_HTML_TITLE') && preg_match('/thirdpartynameonly/', getDolGlobalString('MAIN_HTML_TITLE')) && $object->name) {
 	$title = $object->name." - ".$langs->trans('Customer');
 }
 
 $help_url = 'EN:Module_Third_Parties|FR:Module_Tiers|ES:Empresas|DE:Modul_Geschäftspartner';
 
 llxHeader('', $title, $help_url);
-
 
 if ($object->id > 0) {
 	$head = societe_prepare_head($object);
@@ -482,7 +482,7 @@ if ($object->id > 0) {
 		print $langs->trans("CustomerAbsoluteDiscountShort");
 		print '<td><td class="right">';
 		if ($user->hasRight('societe', 'creer') && !$user->socid > 0) {
-			print '<a class="editfielda" href="'.DOL_URL_ROOT.'/comm/remx.php?id='.$object->id.'&backtopage='.urlencode($_SERVER["PHP_SELF"].'?socid='.$object->id).'&action=create&token='.newToken().'">'.img_edit($langs->trans("Modify")).'</a>';
+			print '<a class="editfielda" href="'.DOL_URL_ROOT.'/comm/remx.php?id='.$object->id.'&backtopage='.urlencode($_SERVER["PHP_SELF"].'?socid='.$object->id).'&action=create_remise&token='.newToken().'">'.img_edit($langs->trans("Modify")).'</a>';
 		}
 		print '</td></tr></table>';
 		print '</td>';
@@ -1028,7 +1028,7 @@ if ($object->id > 0) {
 	/*
 	 *   Latest shipments
 	 */
-	if (isModEnabled("delivery_note") && $user->hasRight('expedition', 'lire')) {
+	if (isModEnabled("shipping") && $user->hasRight('expedition', 'lire')) {
 		$sql = 'SELECT e.rowid as id';
 		$sql .= ', e.ref, e.entity';
 		$sql .= ', e.date_creation';

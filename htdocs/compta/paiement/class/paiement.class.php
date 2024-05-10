@@ -13,6 +13,7 @@
  * Copyright (C) 2021       OpenDsi					<support@open-dsi.fr>
  * Copyright (C) 2023       Joachim Kueter			<git-jk@bloxera.com>
  * Copyright (C) 2023       Sylvain Legrand			<technique@infras.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,12 +69,12 @@ class Paiement extends CommonObject
 	public $socid;
 
 	/**
-	 * @var int
+	 * @var int|string
 	 */
 	public $datepaye;
 
 	/**
-	 * @var int							same than $datepaye
+	 * @var int|string					same than $datepaye
 	 */
 	public $date;
 
@@ -470,6 +471,7 @@ class Paiement extends CommonObject
 									if (empty($discount->id)) {	// If the invoice was not yet converted into a discount (this may have been done manually before we come here)
 										$discount->description = '(DEPOSIT)';
 										$discount->fk_soc = $invoice->socid;
+										$discount->socid = $invoice->socid;
 										$discount->fk_facture_source = $invoice->id;
 
 										// Loop on each vat rate
@@ -594,15 +596,13 @@ class Paiement extends CommonObject
 	 * Delete a payment and generated links into account
 	 *  - Si le paiement porte sur un ecriture compte qui est rapprochee, on refuse
 	 *  - Si le paiement porte sur au moins une facture a "payee", on refuse
-	 * @TODO Add first param User $user
 	 *
+	 * @param	User	$user			User making the deletion
 	 * @param	int		$notrigger		No trigger
 	 * @return 	int     				Return integer <0 if KO, >0 if OK
 	 */
-	public function delete($notrigger = 0)
+	public function delete($user, $notrigger = 0)
 	{
-		global $user;
-
 		$error = 0;
 
 		$bank_line_id = $this->bank_line;
@@ -849,7 +849,7 @@ class Paiement extends CommonObject
 
 				// Add link to the Direct Debit if invoice refused ('InvoiceRefused') in bank_url
 				if (!$error && $label == '(InvoiceRefused)') {
-					$result=$acc->add_url_line(
+					$result = $acc->add_url_line(
 						$bank_line_id,
 						$this->id_prelevement,
 						DOL_URL_ROOT.'/compta/prelevement/card.php?id=',
@@ -1184,7 +1184,7 @@ class Paiement extends CommonObject
 
 				// Load file with numbering class (if found)
 				if (is_file($dir.$file) && is_readable($dir.$file)) {
-					$mybool |= include_once $dir.$file;
+					$mybool = (include_once $dir.$file) || $mybool;
 				}
 			}
 
@@ -1199,7 +1199,7 @@ class Paiement extends CommonObject
 
 					// Load file with numbering class (if found)
 					if (is_file($dir.$file) && is_readable($dir.$file)) {
-						$mybool |= include_once $dir.$file;
+						$mybool = (include_once $dir.$file) || $mybool;
 					}
 				}
 			}
@@ -1354,7 +1354,7 @@ class Paiement extends CommonObject
 		$result .= $linkend;
 		global $action;
 		$hookmanager->initHooks(array($this->element . 'dao'));
-		$parameters = array('id'=>$this->id, 'getnomurl' => &$result);
+		$parameters = array('id' => $this->id, 'getnomurl' => &$result);
 		$reshook = $hookmanager->executeHooks('getNomUrl', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 		if ($reshook > 0) {
 			$result = $hookmanager->resPrint;

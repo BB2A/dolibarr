@@ -65,7 +65,7 @@ class InterfaceWebhookTriggers extends DolibarrTriggers
 	 * @param Conf 			$conf 		Object conf
 	 * @return int              		Return integer <0 if KO, 0 if no triggered ran, >0 if OK
 	 */
-	public function runTrigger(string $action, $object, User $user, Translate $langs, Conf $conf)
+	public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
 	{
 		if (empty($conf->webhook) || empty($conf->webhook->enabled)) {
 			return 0; // If module is not enabled, we do nothing
@@ -97,7 +97,7 @@ class InterfaceWebhookTriggers extends DolibarrTriggers
 
 				$jsonstr = json_encode($resobject);
 
-				$response = getURLContent($tmpobject->url, 'POST', $jsonstr, 1, array(), array('http', 'https'), 0, -1);
+				$response = getURLContent($tmpobject->url, 'POST', $jsonstr, 1, array('content-type:application/json'), array('http', 'https'), 0, -1);
 				if (empty($response['curl_error_no']) && $response['http_code'] >= 200 && $response['http_code'] < 300) {
 					$nbPosts++;
 				} else {

@@ -1,4 +1,6 @@
 <?php
+use PhpParser\Node\Stmt\Label;
+
 /* Copyright (C) 2008-2012	Laurent Destailleur	<eldy@users.sourceforge.net>
  * Copyright (C) 2008-2012	Regis Houssin		<regis.houssin@inodbox.com>
  * Copyright (C) 2014		Juanjo Menent		<jmenent@2byte.es>
@@ -93,9 +95,9 @@ class FormCompany extends Form
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
-	 *	Renvoie la liste des types d'effectifs possibles (pas de traduction car nombre)
+	 *	Return the list of entries for staff (no translation, it is number ranges)
 	 *
-	 *	@param	int		$mode		0=renvoi id+libelle, 1=renvoi code+libelle
+	 *	@param	int		$mode		0=return id+label, 1=return code+Label
 	 *	@param  string	$filter     Add a SQL filter to select. Data must not come from user input.
 	 *  @return array				Array of types d'effectifs
 	 */
@@ -130,6 +132,8 @@ class FormCompany extends Form
 			}
 			$this->db->free($resql);
 		}
+		//return natural sorted list
+		natsort($effs);
 		return $effs;
 	}
 
@@ -1008,7 +1012,7 @@ class FormCompany extends Form
 	 * Return a HTML select with localtax values for thirdparties
 	 *
 	 * @param 	int 		$local			LocalTax
-	 * @param 	int 		$selected		Preselected value
+	 * @param 	float 		$selected		Preselected value
 	 * @param 	string      $htmlname		HTML select name
 	 * @return	void
 	 */

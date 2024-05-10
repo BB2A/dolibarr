@@ -1,6 +1,8 @@
 <?php
 /* Copyright (C) 2004-2023  Laurent Destailleur      <eldy@users.sourceforge.net>
  * Copyright (C) 2011-2024  Alexandre Spangaro       <aspangaro@easya.solutions>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,8 +49,10 @@ if (!$user->hasRight('accounting', 'chartofaccount')) {
 	accessforbidden();
 }
 
+$acts = array();
 $acts[0] = "activate";
 $acts[1] = "disable";
+$actl = array();
 $actl[0] = img_picto($langs->trans("Disabled"), 'switch_off', 'class="size15x"');
 $actl[1] = img_picto($langs->trans("Activated"), 'switch_on', 'class="size15x"');
 
@@ -66,7 +70,7 @@ $offset = $listlimit * $page;
 $pageprev = $page - 1;
 $pagenext = $page + 1;
 
-$search_country_id = GETPOSTINT('search_country_id');
+$search_country_id = GETPOST('search_country_id', 'int');
 
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
 $hookmanager->initHooks(array('admin'));
@@ -117,7 +121,7 @@ $tabcond[32] = isModEnabled('accounting');
 
 // List of help for fields
 $tabhelp = array();
-$tabhelp[32] = array('code'=>$langs->trans("EnterAnyCode"), 'category_type'=>$langs->trans("SetToYesIfGroupIsComputationOfOtherGroups"), 'formula'=>$langs->trans("EnterCalculationRuleIfPreviousFieldIsYes"));
+$tabhelp[32] = array('code' => $langs->trans("EnterAnyCode"), 'category_type' => $langs->trans("SetToYesIfGroupIsComputationOfOtherGroups"), 'formula' => $langs->trans("EnterCalculationRuleIfPreviousFieldIsYes"));
 
 // List of check for fields (NOT USED YET)
 $tabfieldcheck = array();
@@ -199,9 +203,10 @@ if (GETPOST('actionadd', 'alpha') || GETPOST('actionmodify', 'alpha')) {
 
 	// Si verif ok et action add, on ajoute la ligne
 	if ($ok && GETPOST('actionadd', 'alpha')) {
+		$newid = 0;
+
 		if ($tabrowid[$id]) {
 			// Get free id for insert
-			$newid = 0;
 			$sql = "SELECT MAX(".$db->sanitize($tabrowid[$id]).") newid FROM ".$db->sanitize($tabname[$id]);
 			$result = $db->query($sql);
 			if ($result) {
@@ -247,7 +252,7 @@ if (GETPOST('actionadd', 'alpha') || GETPOST('actionmodify', 'alpha')) {
 		$result = $db->query($sql);
 		if ($result) {	// Add is ok
 			setEventMessages($langs->transnoentities("RecordSaved"), null, 'mesgs');
-			$_POST = array('id'=>$id); // Clean $_POST array, we keep only
+			$_POST = array('id' => $id); // Clean $_POST array, we keep only
 		} else {
 			if ($db->errno() == 'DB_ERROR_RECORD_ALREADY_EXISTS') {
 				setEventMessages($langs->transnoentities("ErrorRecordAlreadyExists"), null, 'errors');
@@ -299,19 +304,10 @@ if (GETPOST('actionadd', 'alpha') || GETPOST('actionmodify', 'alpha')) {
 			setEventMessages($db->error(), null, 'errors');
 		}
 	}
-	//$_GET["id"]=GETPOST('id', 'int');       // Force affichage dictionnaire en cours d'edition
-}
-
-if (GETPOST('actioncancel', 'alpha')) {
-	//$_GET["id"]=GETPOST('id', 'int');       // Force affichage dictionnaire en cours d'edition
 }
 
 if ($action == 'confirm_delete' && $confirm == 'yes') {       // delete
-	if ($tabrowid[$id]) {
-		$rowidcol = $tabrowid[$id];
-	} else {
-		$rowidcol = "rowid";
-	}
+	$rowidcol = "rowid";
 
 	$sql = "DELETE from ".$db->sanitize($tabname[$id])." WHERE ".$db->sanitize($rowidcol)." = ".((int) $rowid);
 
@@ -328,11 +324,8 @@ if ($action == 'confirm_delete' && $confirm == 'yes') {       // delete
 
 // activate
 if ($action == $acts[0]) {
-	if ($tabrowid[$id]) {
-		$rowidcol = $tabrowid[$id];
-	} else {
-		$rowidcol = "rowid";
-	}
+	$sql = '';
+	$rowidcol = "rowid";
 
 	if ($rowid) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET active = 1 WHERE ".$db->sanitize($rowidcol)." = ".((int) $rowid);
@@ -340,19 +333,18 @@ if ($action == $acts[0]) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET active = 1 WHERE code = '".$db->escape($code)."'";
 	}
 
-	$result = $db->query($sql);
-	if (!$result) {
-		dol_print_error($db);
+	if ($sql) {
+		$result = $db->query($sql);
+		if (!$result) {
+			dol_print_error($db);
+		}
 	}
 }
 
 // disable
 if ($action == $acts[1]) {
-	if ($tabrowid[$id]) {
-		$rowidcol = $tabrowid[$id];
-	} else {
-		$rowidcol = "rowid";
-	}
+	$sql = '';
+	$rowidcol = "rowid";
 
 	if ($rowid) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET active = 0 WHERE ".$db->sanitize($rowidcol)." = ".((int) $rowid);
@@ -360,19 +352,18 @@ if ($action == $acts[1]) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET active = 0 WHERE code = '".$db->escape($code)."'";
 	}
 
-	$result = $db->query($sql);
-	if (!$result) {
-		dol_print_error($db);
+	if ($sql) {
+		$result = $db->query($sql);
+		if (!$result) {
+			dol_print_error($db);
+		}
 	}
 }
 
 // favorite
 if ($action == 'activate_favorite') {
-	if ($tabrowid[$id]) {
-		$rowidcol = $tabrowid[$id];
-	} else {
-		$rowidcol = "rowid";
-	}
+	$sql = '';
+	$rowidcol = "rowid";
 
 	if ($rowid) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET favorite = 1 WHERE ".$db->sanitize($rowidcol)." = ".((int) $rowid);
@@ -380,19 +371,18 @@ if ($action == 'activate_favorite') {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET favorite = 1 WHERE code = '".$db->escape($code)."'";
 	}
 
-	$result = $db->query($sql);
-	if (!$result) {
-		dol_print_error($db);
+	if ($sql) {
+		$result = $db->query($sql);
+		if (!$result) {
+			dol_print_error($db);
+		}
 	}
 }
 
 // disable favorite
 if ($action == 'disable_favorite') {
-	if ($tabrowid[$id]) {
-		$rowidcol = $tabrowid[$id];
-	} else {
-		$rowidcol = "rowid";
-	}
+	$sql = '';
+	$rowidcol = "rowid";
 
 	if ($rowid) {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET favorite = 0 WHERE ".$db->sanitize($rowidcol)." = ".((int) $rowid);
@@ -400,9 +390,11 @@ if ($action == 'disable_favorite') {
 		$sql = "UPDATE ".$db->sanitize($tabname[$id])." SET favorite = 0 WHERE code = '".$db->escape($code)."'";
 	}
 
-	$result = $db->query($sql);
-	if (!$result) {
-		dol_print_error($db);
+	if ($sql) {
+		$result = $db->query($sql);
+		if (!$result) {
+			dol_print_error($db);
+		}
 	}
 }
 
@@ -459,7 +451,7 @@ $fieldlist = explode(',', $tabfield[$id]);
 
 $param = '&id='.$id;
 if ($search_country_id > 0) {
-	$param .= '&search_country_id='.urlencode($search_country_id);
+	$param .= '&search_country_id='.urlencode((string) ($search_country_id));
 }
 $paramwithsearch = $param;
 if ($sortorder) {
@@ -472,7 +464,7 @@ if (GETPOST('from', 'alpha')) {
 	$paramwithsearch .= '&from='.urlencode(GETPOST('from', 'alpha'));
 }
 if ($listlimit) {
-	$paramwithsearch .= '&listlimit='.urlencode(GETPOSTINT('listlimit'));
+	$paramwithsearch .= '&listlimit='.urlencode((string) (GETPOSTINT('listlimit')));
 }
 print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$id.'" method="POST">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -582,7 +574,7 @@ if ($tabname[$id]) {
 	}
 
 	$tmpaction = 'create';
-	$parameters = array('fieldlist'=>$fieldlist, 'tabname'=>$tabname[$id]);
+	$parameters = array('fieldlist' => $fieldlist, 'tabname' => $tabname[$id]);
 	$reshook = $hookmanager->executeHooks('createDictionaryFieldlist', $parameters, $obj, $tmpaction); // Note that $action and $object may have been modified by some hooks
 	$error = $hookmanager->error;
 	$errors = $hookmanager->errors;
@@ -786,7 +778,7 @@ if ($resql) {
 			print '<tr class="oddeven" id="rowid-'.$obj->rowid.'">';
 			if ($action == 'edit' && ($rowid == (!empty($obj->rowid) ? $obj->rowid : $obj->code))) {
 				$tmpaction = 'edit';
-				$parameters = array('fieldlist'=>$fieldlist, 'tabname'=>$tabname[$id]);
+				$parameters = array('fieldlist' => $fieldlist, 'tabname' => $tabname[$id]);
 				$reshook = $hookmanager->executeHooks('editDictionaryFieldlist', $parameters, $obj, $tmpaction); // Note that $action and $object may have been modified by some hooks
 				$error = $hookmanager->error;
 				$errors = $hookmanager->errors;
@@ -833,7 +825,7 @@ if ($resql) {
 				$canbemodified = $iserasable;
 
 				$tmpaction = 'view';
-				$parameters = array('fieldlist'=>$fieldlist, 'tabname'=>$tabname[$id]);
+				$parameters = array('fieldlist' => $fieldlist, 'tabname' => $tabname[$id]);
 				$reshook = $hookmanager->executeHooks('viewDictionaryFieldlist', $parameters, $obj, $tmpaction); // Note that $action and $object may have been modified by some hooks
 
 				$error = $hookmanager->error;
@@ -954,10 +946,10 @@ $db->close();
 /**
  *	Show fields in insert/edit mode
  *
- * 	@param		array	$fieldlist		Array of fields
- * 	@param		Object	$obj			If we show a particular record, obj is filled with record fields
- *  @param		string	$tabname		Name of SQL table
- *  @param		string	$context		'add'=Output field for the "add form", 'edit'=Output field for the "edit form", 'hide'=Output field for the "add form" but we don't want it to be rendered
+ * 	@param		string[]	$fieldlist		Array of fields
+ * 	@param		stdClass	$obj			If we show a particular record, obj is filled with record fields
+ *  @param		string		$tabname		Name of SQL table
+ *  @param		string		$context		'add'=Output field for the "add form", 'edit'=Output field for the "edit form", 'hide'=Output field for the "add form" but we don't want it to be rendered
  *	@return		void
  */
 function fieldListAccountingCategories($fieldlist, $obj = null, $tabname = '', $context = '')

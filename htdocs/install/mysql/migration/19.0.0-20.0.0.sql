@@ -5,7 +5,7 @@
 --
 -- To restrict request to Mysql version x.y minimum use -- VMYSQLx.y
 -- To restrict request to Pgsql version x.y minimum use -- VPGSQLx.y
--- To rename a table:       ALTER TABLE llx_table RENAME TO llx_table_new;
+-- To rename a table:       ALTER TABLE llx_table RENAME TO llx_table_new; -- Note that "RENAME TO" is both compatible mysql/postgesql, not "RENAME" alone.
 -- To add a column:         ALTER TABLE llx_table ADD COLUMN newcol varchar(60) NOT NULL DEFAULT '0' AFTER existingcol;
 -- To rename a column:      ALTER TABLE llx_table CHANGE COLUMN oldname newname varchar(60);
 -- To drop a column:        ALTER TABLE llx_table DROP COLUMN oldname;
@@ -47,6 +47,11 @@ ALTER TABLE llx_resource ADD INDEX idx_resource_fk_state (fk_state);
 
 UPDATE llx_c_type_contact SET element = 'stocktransfer' WHERE element = 'StockTransfer';
 
+DELETE FROM llx_boxes WHERE box_id IN (SELECT rowid FROM llx_boxes_def WHERE file = 'box_members.php');
+DELETE FROM llx_boxes_def WHERE file = 'box_members.php';
+
+UPDATE llx_c_units SET scale = 1 WHERE code = 'S';
+
 
 -- Use unique keys for extrafields
 ALTER TABLE llx_actioncomm_extrafields DROP INDEX idx_actioncomm_extrafields;
@@ -67,8 +72,6 @@ ALTER TABLE llx_categories_extrafields DROP INDEX idx_categories_extrafields;
 ALTER TABLE llx_categories_extrafields ADD UNIQUE INDEX uk_categories_extrafields (fk_object);
 ALTER TABLE llx_commande_extrafields DROP INDEX idx_commande_extrafields;
 ALTER TABLE llx_commande_extrafields ADD UNIQUE INDEX uk_commande_extrafields (fk_object);
-ALTER TABLE llx_commande_fournisseur_dispatch_extrafields DROP INDEX idx_commande_fournisseur_dispatch_extrafields;
-ALTER TABLE llx_commande_fournisseur_dispatch_extrafields ADD UNIQUE INDEX uk_commande_fournisseur_dispatch_extrafields (fk_object);
 ALTER TABLE llx_commande_fournisseur_extrafields DROP INDEX idx_commande_fournisseur_extrafields;
 ALTER TABLE llx_commande_fournisseur_extrafields ADD UNIQUE INDEX uk_commande_fournisseur_extrafields (fk_object);
 ALTER TABLE llx_commande_fournisseurdet_extrafields DROP INDEX idx_commande_fournisseurdet_extrafields;
@@ -186,7 +189,8 @@ ALTER TABLE llx_product_customer_price_log ADD COLUMN price_label varchar(255) A
 ALTER TABLE llx_product_customer_price ADD COLUMN price_label varchar(255) AFTER fk_user;
 ALTER TABLE llx_product ADD COLUMN price_label varchar(255) AFTER price_base_type;
 
-
+ALTER TABLE llx_fichinter_rec ADD COLUMN status smallint DEFAULT 0;
+ALTER TABLE llx_fichinter_rec CHANGE COLUMN titre title varchar(50) NOT NULL;
 CREATE TABLE llx_product_thirdparty
 (
     rowid                               integer AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -227,13 +231,26 @@ ALTER TABLE llx_product DROP COLUMN onportal;
 
 ALTER TABLE llx_product ADD COLUMN last_main_doc varchar(255);
 
+ALTER TABLE llx_hrm_evaluation ADD COLUMN last_main_doc varchar(255);
+
 ALTER TABLE llx_knowledgemanagement_knowledgerecord MODIFY COLUMN answer longtext;
+
+ALTER TABLE llx_commande_fournisseur_dispatch_extrafields RENAME TO llx_receptiondet_batch_extrafields;
+ALTER TABLE llx_commande_fournisseur_dispatch RENAME TO llx_receptiondet_batch;
 
 -- Rename const to add customer categories on not customer/prospect third-party if enabled
 UPDATE llx_const SET name = 'THIRDPARTY_CAN_HAVE_CUSTOMER_CATEGORY_EVEN_IF_NOT_CUSTOMER_PROSPECT' WHERE name = 'THIRDPARTY_CAN_HAVE_CATEGORY_EVEN_IF_NOT_CUSTOMER_PROSPECT_SUPPLIER';
 
-ALTER TABLE llx_fichinter ADD COLUMN signed_status integer DEFAULT NULL AFTER duree;
-ALTER TABLE llx_contrat ADD COLUMN signed_status integer DEFAULT NULL AFTER date_contrat;
+ALTER TABLE llx_fichinter ADD COLUMN signed_status smallint DEFAULT NULL AFTER duree;
+ALTER TABLE llx_contrat ADD COLUMN signed_status smallint DEFAULT NULL AFTER date_contrat;
+ALTER TABLE llx_expedition ADD COLUMN signed_status smallint DEFAULT NULL AFTER billed;
+
+ALTER TABLE llx_fichinter ADD COLUMN online_sign_ip	varchar(48);
+ALTER TABLE llx_fichinter ADD COLUMN online_sign_name varchar(64);
+ALTER TABLE llx_contrat ADD COLUMN online_sign_ip	varchar(48);
+ALTER TABLE llx_contrat ADD COLUMN online_sign_name varchar(64);
+ALTER TABLE llx_expedition ADD COLUMN online_sign_ip	varchar(48);
+ALTER TABLE llx_expedition ADD COLUMN online_sign_name varchar(64);
 
 ALTER TABLE llx_mailing ADD COLUMN messtype	varchar(16) DEFAULT 'email' after rowid;
 
@@ -241,6 +258,7 @@ ALTER TABLE llx_ticket ADD COLUMN model_pdf varchar(255);
 ALTER TABLE llx_ticket ADD COLUMN last_main_doc varchar(255);
 ALTER TABLE llx_ticket ADD COLUMN extraparams varchar(255);
 ALTER TABLE llx_ticket ADD COLUMN origin_replyto varchar(128);
+ALTER TABLE llx_ticket ADD COLUMN origin_references text DEFAULT NULL;
 
 ALTER TABLE llx_expensereport MODIFY COLUMN model_pdf varchar(255) DEFAULT NULL;
 ALTER TABLE llx_fichinter_rec MODIFY COLUMN modelpdf varchar(255) DEFAULT NULL;
@@ -264,3 +282,47 @@ ALTER TABLE llx_societe ADD COLUMN phone_mobile varchar(20) after phone;
 
 ALTER TABLE llx_facture ADD INDEX idx_facture_tms (tms);
 ALTER TABLE llx_facture_fourn ADD INDEX idx_facture_fourn_tms (tms);
+
+ALTER TABLE llx_element_element MODIFY COLUMN sourcetype VARCHAR(64) NOT NULL;
+ALTER TABLE llx_element_element MODIFY COLUMN targettype VARCHAR(64) NOT NULL;
+ALTER TABLE llx_c_type_contact MODIFY COLUMN element VARCHAR(64) NOT NULL;
+
+ALTER TABLE llx_product_association ADD COLUMN import_key varchar(14) DEFAULT NULL;
+
+ALTER TABLE llx_ticket ADD COLUMN barcode varchar(255) DEFAULT NULL after extraparams;
+ALTER TABLE llx_ticket ADD COLUMN fk_barcode_type integer DEFAULT NULL after barcode;
+
+ALTER TABLE llx_ticket ADD UNIQUE INDEX uk_ticket_barcode_barcode_type (barcode, fk_barcode_type, entity);
+ALTER TABLE llx_ticket ADD CONSTRAINT llx_ticket_fk_product_barcode_type FOREIGN KEY (fk_barcode_type) REFERENCES  llx_c_barcode_type (rowid);
+
+ALTER TABLE llx_socpeople ADD COLUMN fk_parent integer NULL;
+
+ALTER TABLE llx_expeditiondet ADD COLUMN fk_product integer;
+ALTER TABLE llx_expeditiondet ADD COLUMN fk_element integer;
+ALTER TABLE llx_expeditiondet ADD COLUMN element_type varchar(50) DEFAULT 'order' NOT NULL;
+ALTER TABLE llx_expeditiondet CHANGE COLUMN fk_origin_line fk_elementdet integer;
+ALTER TABLE llx_expeditiondet DROP INDEX idx_expeditiondet_fk_origin_line;
+ALTER TABLE llx_expeditiondet ADD INDEX idx_expeditiondet_fk_elementdet (fk_elementdet);
+
+ALTER TABLE llx_receptiondet_batch CHANGE COLUMN fk_commande fk_element integer;
+ALTER TABLE llx_receptiondet_batch CHANGE COLUMN fk_commandefourndet fk_elementdet integer;
+
+ALTER TABLE llx_supplier_proposaldet MODIFY ref_fourn VARCHAR(128) NULL;
+
+ALTER TABLE llx_projet ADD COLUMN ref_ext varchar(50) after ref;
+ALTER TABLE llx_projet ADD COLUMN email_date datetime after email_msgid;
+
+-- bookcal
+ALTER TABLE llx_bookcal_calendar ADD COLUMN entity integer DEFAULT 1 NOT NULL AFTER rowid;
+
+ALTER TABLE llx_rights_def ADD COLUMN module_origin varchar(64) AFTER module;
+ALTER TABLE llx_rights_def ADD COLUMN enabled text NULL AFTER bydefault;
+
+DELETE FROM llx_c_action_trigger WHERE code = 'BILLREC_AUTOCREATEBILL';
+
+
+-- element_element, see https://github.com/Dolibarr/dolibarr/pull/29329
+
+ALTER TABLE element_element ADD COLUMN relationtype	varchar(64) DEFAULT NULL AFTER targettype;
+
+ALTER TABLE llx_ecm_files DROP column keyword;

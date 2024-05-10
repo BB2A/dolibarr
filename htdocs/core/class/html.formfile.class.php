@@ -8,6 +8,7 @@
  * Copyright (C) 2015		Bahfir Abbes		<bafbes@gmail.com>
  * Copyright (C) 2016-2017	Ferran Marcet		<fmarcet@2byte.es>
  * Copyright (C) 2019-2023  Frédéric France     <frederic.france@netlogic.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -260,7 +261,7 @@ class FormFile
 				$out .= "\n</div><!-- End form link new url -->\n";
 			}
 
-			$parameters = array('socid'=>(isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id'=>(isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'url'=>$url, 'perm'=>$perm, 'options'=>$options);
+			$parameters = array('socid' => (isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id' => (isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'url' => $url, 'perm' => $perm, 'options' => $options);
 			$res = $hookmanager->executeHooks('formattachOptions', $parameters, $object);
 			if (empty($res)) {
 				$out = '<div class="'.($usewithoutform ? 'inline-block valignmiddle' : 'attacharea attacharea'.$htmlname).'">'.$out.'</div>';
@@ -328,7 +329,7 @@ class FormFile
 	 * 		@param		string				$buttonlabel		Label on submit button
 	 * 		@param		string				$codelang			Default language code to use on lang combo box if multilang is enabled
 	 * 		@param		string				$morepicto			Add more HTML content into cell with picto
-	 *      @param      Object              $object             Object when method is called from an object card.
+	 *      @param      Object|null         $object             Object when method is called from an object card.
 	 *      @param		int					$hideifempty		Hide section of generated files if there is no file
 	 *      @param      string              $removeaction       (optional) The action to remove a file
 	 *      @param		string				$tooltipontemplatecombo		Text to show on a tooltip after the combo list of templates
@@ -349,23 +350,23 @@ class FormFile
 		$reshook = 0;
 		if (is_object($hookmanager)) {
 			$parameters = array(
-				'modulepart'=>&$modulepart,
-				'modulesubdir'=>&$modulesubdir,
-				'filedir'=>&$filedir,
-				'urlsource'=>&$urlsource,
-				'genallowed'=>&$genallowed,
-				'delallowed'=>&$delallowed,
-				'modelselected'=>&$modelselected,
-				'allowgenifempty'=>&$allowgenifempty,
-				'forcenomultilang'=>&$forcenomultilang,
-				'noform'=>&$noform,
-				'param'=>&$param,
-				'title'=>&$title,
-				'buttonlabel'=>&$buttonlabel,
-				'codelang'=>&$codelang,
-				'morepicto'=>&$morepicto,
-				'hideifempty'=>&$hideifempty,
-				'removeaction'=>&$removeaction
+				'modulepart' => &$modulepart,
+				'modulesubdir' => &$modulesubdir,
+				'filedir' => &$filedir,
+				'urlsource' => &$urlsource,
+				'genallowed' => &$genallowed,
+				'delallowed' => &$delallowed,
+				'modelselected' => &$modelselected,
+				'allowgenifempty' => &$allowgenifempty,
+				'forcenomultilang' => &$forcenomultilang,
+				'noform' => &$noform,
+				'param' => &$param,
+				'title' => &$title,
+				'buttonlabel' => &$buttonlabel,
+				'codelang' => &$codelang,
+				'morepicto' => &$morepicto,
+				'hideifempty' => &$hideifempty,
+				'removeaction' => &$removeaction
 			);
 			$reshook = $hookmanager->executeHooks('showDocuments', $parameters, $object); // Note that parameters may have been updated by hook
 			// May report error
@@ -593,7 +594,7 @@ class FormFile
 				} else {
 					include_once DOL_DOCUMENT_ROOT.'/core/modules/export/modules_export.php';
 					//$modellist = ModeleExports::liste_modeles($this->db);		// liste_modeles() does not exists. We are using listOfAvailableExportFormat() method instead that return a different array format.
-					$modellist = array();
+					$modellist = array();  // @phan-suppress-current-line PhanPluginRedundantAssignment
 				}
 			} elseif ($modulepart == 'commande_fournisseur' || $modulepart == 'supplier_order') {
 				if (is_array($genallowed)) {
@@ -713,7 +714,7 @@ class FormFile
 			$out .= '<tr class="liste_titre">';
 			$addcolumforpicto = ($delallowed || $printer || $morepicto);
 			$colspan = (4 + ($addcolumforpicto ? 1 : 0));
-			$colspanmore = 0;
+			$colspanmore = 0;  // @phan-suppress-current-line PhanPluginRedundantAssignment
 
 			$out .= '<th colspan="'.$colspan.'" class="formdoc liste_titre maxwidthonsmartphone center">';
 
@@ -816,7 +817,7 @@ class FormFile
 			$out .= '</tr>';
 
 			// Execute hooks
-			$parameters = array('colspan'=>($colspan + $colspanmore), 'socid'=>(isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id'=>(isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'modulepart'=>$modulepart);
+			$parameters = array('colspan' => ($colspan + $colspanmore), 'socid' => (isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id' => (isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'modulepart' => $modulepart);
 			if (is_object($hookmanager)) {
 				$reshook = $hookmanager->executeHooks('formBuilddocOptions', $parameters, $GLOBALS['object']);
 				$out .= $hookmanager->resPrint;
@@ -889,7 +890,11 @@ class FormFile
 					} else {
 						$out .= '<span class="spanoverflow">';
 					}
-					$out .= '<a class="documentdownload paddingright" href="'.$documenturl.'?modulepart='.$modulepart.'&file='.urlencode($relativepath).($param ? '&'.$param : '').'"';
+					$out .= '<a class="documentdownload paddingright" ';
+					if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
+						$out .= 'target="_blank" ';
+					}
+					$out .= 'href="'.$documenturl.'?modulepart='.$modulepart.'&file='.urlencode($relativepath).($param ? '&'.$param : '').'"';
 
 					$mime = dol_mimetype($relativepath, '', 0);
 					if (preg_match('/text/', $mime)) {
@@ -967,7 +972,7 @@ class FormFile
 						$addcolumforpicto = ($delallowed || $printer || $morepicto);
 						$colspan = (4 + ($addcolumforpicto ? 1 : 0));
 						$colspanmore = 0;
-						$parameters = array('colspan'=>($colspan + $colspanmore), 'socid'=>(isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id'=>(isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'modulepart'=>$modulepart, 'relativepath'=>$relativepath);
+						$parameters = array('colspan' => ($colspan + $colspanmore), 'socid' => (isset($GLOBALS['socid']) ? $GLOBALS['socid'] : ''), 'id' => (isset($GLOBALS['id']) ? $GLOBALS['id'] : ''), 'modulepart' => $modulepart, 'relativepath' => $relativepath);
 						$res = $hookmanager->executeHooks('formBuilddocLineOptions', $parameters, $file);
 						if (empty($res)) {
 							$out .= $hookmanager->resPrint; // Complete line
@@ -1056,7 +1061,7 @@ class FormFile
 		include_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 
 		$out = '';
-		$this->infofiles = array('nboffiles'=>0, 'extensions'=>array(), 'files'=>array());
+		$this->infofiles = array('nboffiles' => 0, 'extensions' => array(), 'files' => array());
 
 		$entity = 1; // Without multicompany
 
@@ -1080,8 +1085,8 @@ class FormFile
 		$out .= '<!-- html.formfile::getDocumentsLink -->'."\n";
 		if (!empty($file_list)) {
 			$out = '<dl class="dropdown inline-block">
-    			<dt><a data-ajax="false" href="#" onClick="return false;">'.img_picto('', 'listlight', '', 0, 0, 0, '', $morecss).'</a></dt>
-    			<dd><div class="multichoicedoc" style="position:absolute;left:100px;" ><ul class="ulselectedfields">';
+				<dt><a data-ajax="false" href="#" onClick="return false;">'.img_picto('', 'listlight', '', 0, 0, 0, '', $morecss).'</a></dt>
+				<dd><div class="multichoicedoc" style="position:absolute;left:100px;" ><ul class="ulselectedfields">';
 			$tmpout = '';
 
 			// Loop on each file found
@@ -1128,7 +1133,11 @@ class FormFile
 				}
 
 				// Download
-				$tmpout .= '<li class="nowrap"><a class="pictopreview nowrap" href="'.DOL_URL_ROOT.'/document.php?modulepart='.$modulepart.'&amp;entity='.$entity.'&amp;file='.urlencode($relativepath).'"';
+				$tmpout .= '<li class="nowrap"><a class="pictopreview nowrap" ';
+				if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
+						$tmpout .= 'target="_blank" ';
+				}
+				$tmpout .= 'href="'.DOL_URL_ROOT.'/document.php?modulepart='.$modulepart.'&amp;entity='.$entity.'&amp;file='.urlencode($relativepath).'"';
 				$mime = dol_mimetype($relativepath, '', 0);
 				if (preg_match('/text/', $mime)) {
 					$tmpout .= ' target="_blank" rel="noopener noreferrer"';
@@ -1140,7 +1149,7 @@ class FormFile
 			}
 			$out .= $tmpout;
 			$out .= '</ul></div></dd>
-    			</dl>';
+				</dl>';
 
 			if (!$found) {
 				$out = '';
@@ -1230,7 +1239,7 @@ class FormFile
 		$hookmanager->initHooks(array('formfile'));
 		$parameters = array(
 				'filearray' => $filearray,
-				'modulepart'=> $modulepart,
+				'modulepart' => $modulepart,
 				'param' => $param,
 				'forcedownload' => $forcedownload,
 				'relativepath' => $relativepath, // relative filename to module dir
@@ -1354,7 +1363,9 @@ class FormFile
 					if (array_key_exists('rowid', $filearray[$key]) && $filearray[$key]['rowid'] > 0) {
 						$lastrowid = $filearray[$key]['rowid'];
 					}
-					$filepath = $relativepath.$file['name'];
+					$filepath = $file['level1name'].'/'.$file['name'];
+					$modulepart = basename(dirname($file['path']));
+					$relativepath = preg_replace('/\/(.+)/', '', $filepath) . '/';
 
 					$editline = 0;
 					$nboflines++;
@@ -1370,7 +1381,11 @@ class FormFile
 
 					// Show file name with link to download
 					//print "XX".$file['name'];	//$file['name'] must be utf8
-					print '<a class="paddingright valignmiddle" href="'.DOL_URL_ROOT.'/document.php?modulepart='.$modulepart;
+					print '<a class="paddingright valignmiddle" ';
+					if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
+						print 'target="_blank" ';
+					}
+					print 'href="'.DOL_URL_ROOT.'/document.php?modulepart='.$modulepart;
 					if ($forcedownload) {
 						print '&attachment=1';
 					}
@@ -1384,7 +1399,7 @@ class FormFile
 						print $relativepath;
 					}
 					//print dol_trunc($file['name'],$maxlength,'middle');
-					if (GETPOST('action', 'aZ09') == 'editfile' && $file['name'] == basename(GETPOST('urlfile', 'alpha'))) {
+					if (GETPOST('action', 'aZ09') == 'editfile' && $file['name'] == basename(GETPOST('urlfile', 'alpha')) && $file['level1name'] == dirname(GETPOST('urlfile', 'alpha'))) {
 						print '</a>';
 						$section_dir = dirname(GETPOST('urlfile', 'alpha'));
 						if (!preg_match('/\/$/', $section_dir)) {
@@ -1433,7 +1448,11 @@ class FormFile
 							if (!dol_is_file($file['path'].'/'.$smallfile)) {
 								$smallfile = getImageFileNameForSize($file['name'], '_small', '.png'); // For backward compatibility of old thumbs that were created with filename in lower case and with .png extension
 							}
+							if (!dol_is_file($file['path'].'/'.$smallfile)) {
+								$smallfile = getImageFileNameForSize($file['name'], ''); // This is in case no _small image exist
+							}
 							//print $file['path'].'/'.$smallfile.'<br>';
+
 
 							$urlforhref = getAdvancedPreviewUrl($modulepart, $relativepath.$fileinfo['filename'].'.'.strtolower($fileinfo['extension']), 1, '&entity='.(empty($object->entity) ? $conf->entity : $object->entity));
 							if (empty($urlforhref)) {
@@ -1775,7 +1794,7 @@ class FormFile
 			include_once DOL_DOCUMENT_ROOT.'/mrp/class/mo.class.php';
 			$object_instance = new Mo($this->db);
 		} else {
-			$parameters = array('modulepart'=>$modulepart);
+			$parameters = array('modulepart' => $modulepart);
 			$reshook = $hookmanager->executeHooks('addSectionECMAuto', $parameters);
 			if ($reshook > 0 && is_array($hookmanager->resArray) && count($hookmanager->resArray) > 0) {
 				if (array_key_exists('classpath', $hookmanager->resArray) && !empty($hookmanager->resArray['classpath'])) {
@@ -1859,7 +1878,7 @@ class FormFile
 					preg_match('/(.*)\/[^\/]+$/', $relativefile, $reg);
 					$ref = (isset($reg[1]) ? $reg[1] : '');
 				} else {
-					$parameters = array('modulepart'=>$modulepart, 'fileinfo'=>$file);
+					$parameters = array('modulepart' => $modulepart, 'fileinfo' => $file);
 					$reshook = $hookmanager->executeHooks('addSectionECMAuto', $parameters);
 					if ($reshook > 0 && is_array($hookmanager->resArray) && count($hookmanager->resArray) > 0) {
 						if (array_key_exists('ref', $hookmanager->resArray) && !empty($hookmanager->resArray['ref'])) {
@@ -1942,7 +1961,11 @@ class FormFile
 				// Check if document source has external module part, if it the case use it for module part on document.php
 				print '<td>';
 				//print "XX".$file['name']; //$file['name'] must be utf8
-				print '<a href="'.DOL_URL_ROOT.'/document.php?modulepart='.urlencode($modulepart);
+				print '<a ';
+				if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
+					print 'target="_blank" ';
+				}
+				print 'href="'.DOL_URL_ROOT.'/document.php?modulepart='.urlencode($modulepart);
 				if ($forcedownload) {
 					print '&attachment=1';
 				}

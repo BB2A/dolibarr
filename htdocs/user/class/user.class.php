@@ -1,20 +1,21 @@
 <?php
-/* Copyright (c) 2002-2007  Rodolphe Quiedeville    <rodolphe@quiedeville.org>
- * Copyright (c) 2002-2003  Jean-Louis Bergamo      <jlb@j1b.org>
- * Copyright (c) 2004-2012  Laurent Destailleur     <eldy@users.sourceforge.net>
- * Copyright (C) 2004       Sebastien Di Cintio     <sdicintio@ressource-toi.org>
- * Copyright (C) 2004       Benoit Mortier          <benoit.mortier@opensides.be>
- * Copyright (C) 2005-2017  Regis Houssin           <regis.houssin@inodbox.com>
- * Copyright (C) 2005       Lionel Cousteix         <etm_ltd@tiscali.co.uk>
- * Copyright (C) 2011       Herve Prot              <herve.prot@symeos.com>
- * Copyright (C) 2013-2019  Philippe Grand          <philippe.grand@atoo-net.com>
- * Copyright (C) 2013-2015  Alexandre Spangaro      <aspangaro@open-dsi.fr>
- * Copyright (C) 2015       Marcos García           <marcosgdf@gmail.com>
- * Copyright (C) 2018       charlene Benke          <charlie@patas-monkey.com>
- * Copyright (C) 2018-2021       Nicolas ZABOURI         <info@inovea-conseil.com>
- * Copyright (C) 2019-2024  Frédéric France         <frederic.france@free.fr>
- * Copyright (C) 2019       Abbes Bahfir            <dolipar@dolipar.org>
- * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
+/* Copyright (c) 2002-2007	Rodolphe Quiedeville	<rodolphe@quiedeville.org>
+ * Copyright (c) 2002-2003	Jean-Louis Bergamo		<jlb@j1b.org>
+ * Copyright (c) 2004-2012	Laurent Destailleur		<eldy@users.sourceforge.net>
+ * Copyright (C) 2004		Sebastien Di Cintio		<sdicintio@ressource-toi.org>
+ * Copyright (C) 2004		Benoit Mortier			<benoit.mortier@opensides.be>
+ * Copyright (C) 2005-2024	Regis Houssin			<regis.houssin@inodbox.com>
+ * Copyright (C) 2005		Lionel Cousteix			<etm_ltd@tiscali.co.uk>
+ * Copyright (C) 2011		Herve Prot				<herve.prot@symeos.com>
+ * Copyright (C) 2013-2019	Philippe Grand			<philippe.grand@atoo-net.com>
+ * Copyright (C) 2013-2015	Alexandre Spangaro		<aspangaro@open-dsi.fr>
+ * Copyright (C) 2015		Marcos García			<marcosgdf@gmail.com>
+ * Copyright (C) 2018		charlene Benke			<charlie@patas-monkey.com>
+ * Copyright (C) 2018-2021	Nicolas ZABOURI			<info@inovea-conseil.com>
+ * Copyright (C) 2019-2024	Frédéric France			<frederic.france@free.fr>
+ * Copyright (C) 2019		Abbes Bahfir			<dolipar@dolipar.org>
+ * Copyright (C) 2024		MDW						<mdeweerd@users.noreply.github.com>
+ * Copyright (C) 2024		Lenin Rivas				<lenin.rivas777@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,17 +66,6 @@ class User extends CommonObject
 	public $fk_element = 'fk_user';
 
 	/**
-	 * 0=No test on entity, 1=Test with field entity, 2=Test with link by societe
-	 * @var int
-	 */
-	public $ismultientitymanaged = 1;
-
-	/**
-	 * @var int  Does object support extrafields ? 0=No, 1=Yes
-	 */
-	public $isextrafieldmanaged = 1;
-
-	/**
 	 * @var string picto
 	 */
 	public $picto = 'user';
@@ -83,7 +73,7 @@ class User extends CommonObject
 	public $id = 0;
 
 	/**
-	 * @var User old copy of User
+	 * @var static old copy of User
 	 */
 	public $oldcopy;
 
@@ -112,7 +102,7 @@ class User extends CommonObject
 	public $fullname;
 
 	/**
-	 * @var string gender
+	 * @var string|int<-1,-1> gender (man|woman|other)
 	 */
 	public $gender;
 
@@ -336,7 +326,10 @@ class User extends CommonObject
 	public $lastsearch_values_tmp; // To store current search criteria for user
 	public $lastsearch_values; // To store last saved search criteria for user
 
-	public $users = array(); // To store all tree of users hierarchy
+	/**
+	 *	@var array<int,User>|array<int,array{rowid:int,id:int,fk_user:int,fk_soc:int,firstname:string,lastname:string,login:string,statut:int,entity:int,email:string,gender:string|int<-1,-1>,admin:int<0,1>,photo:string,fullpath:string,fullname:string,level:int}>  Array of User (filled from fetchAll) or Array with hierarchy of user information (filled with get_full_tree()
+	 */
+	public $users = array();
 	public $parentof; // To store an array of all parents for all ids.
 	private $cache_childids; // Cache array of already loaded children
 
@@ -377,23 +370,36 @@ class User extends CommonObject
 	public $fk_warehouse;
 
 	/**
+	 *@var int id of establishment
+	 */
+	public $fk_establishment;
+
+	/**
+	 *@var string label of establishment
+	 */
+	public $label_establishment;
+
+	/**
 	 * @var int egroupware id
 	 */
-	public $egroupware_id;
+	//private $egroupware_id;
+
+	/**
+	 * @var array<int>		Entity in table llx_user_group
+	 * @deprecated			Seems not used.
+	 */
+	public $usergroup_entity;
 
 	public $fields = array(
-		'rowid'=>array('type'=>'integer', 'label'=>'TechnicalID', 'enabled'=>1, 'visible'=>-2, 'notnull'=>1, 'index'=>1, 'position'=>1, 'comment'=>'Id'),
-		'lastname'=>array('type'=>'varchar(50)', 'label'=>'Lastname', 'enabled'=>1, 'visible'=>1, 'notnull'=>1, 'showoncombobox'=>1, 'index'=>1, 'position'=>20, 'searchall'=>1),
-		'firstname'=>array('type'=>'varchar(50)', 'label'=>'Firstname', 'enabled'=>1, 'visible'=>1, 'notnull'=>1, 'showoncombobox'=>1, 'index'=>1, 'position'=>10, 'searchall'=>1),
-		'ref_employee'=>array('type'=>'varchar(50)', 'label'=>'RefEmployee', 'enabled'=>1, 'visible'=>1, 'notnull'=>1, 'showoncombobox'=>1, 'index'=>1, 'position'=>30, 'searchall'=>1),
-		'national_registration_number'=>array('type'=>'varchar(50)', 'label'=>'NationalRegistrationNumber', 'enabled'=>1, 'visible'=>1, 'notnull'=>1, 'showoncombobox'=>1, 'index'=>1, 'position'=>40, 'searchall'=>1)
+		'rowid' => array('type' => 'integer', 'label' => 'TechnicalID', 'enabled' => 1, 'visible' => -2, 'notnull' => 1, 'index' => 1, 'position' => 1, 'comment' => 'Id'),
+		'lastname' => array('type' => 'varchar(50)', 'label' => 'Lastname', 'enabled' => 1, 'visible' => 1, 'notnull' => 1, 'showoncombobox' => 1, 'index' => 1, 'position' => 20, 'searchall' => 1),
+		'firstname' => array('type' => 'varchar(50)', 'label' => 'Firstname', 'enabled' => 1, 'visible' => 1, 'notnull' => 1, 'showoncombobox' => 1, 'index' => 1, 'position' => 10, 'searchall' => 1),
+		'ref_employee' => array('type' => 'varchar(50)', 'label' => 'RefEmployee', 'enabled' => 1, 'visible' => 1, 'notnull' => 1, 'showoncombobox' => 1, 'index' => 1, 'position' => 30, 'searchall' => 1),
+		'national_registration_number' => array('type' => 'varchar(50)', 'label' => 'NationalRegistrationNumber', 'enabled' => 1, 'visible' => 1, 'notnull' => 1, 'showoncombobox' => 1, 'index' => 1, 'position' => 40, 'searchall' => 1)
 	);
-
 
 	const STATUS_DISABLED = 0;
 	const STATUS_ENABLED = 1;
-
-
 
 	/**
 	 *    Constructor of the class
@@ -404,6 +410,8 @@ class User extends CommonObject
 	{
 		$this->db = $db;
 
+		$this->ismultientitymanaged = 1;
+		$this->isextrafieldmanaged = 1;
 		// User preference
 		$this->clicktodial_loaded = 0;
 
@@ -482,10 +490,12 @@ class User extends CommonObject
 		$sql .= " u.national_registration_number,";
 		$sql .= " u.ref_employee,";
 		$sql .= " c.code as country_code, c.label as country,";
-		$sql .= " d.code_departement as state_code, d.nom as state";
+		$sql .= " d.code_departement as state_code, d.nom as state,";
+		$sql .= " s.label as label_establishment, u.fk_establishment";
 		$sql .= " FROM ".$this->db->prefix()."user as u";
 		$sql .= " LEFT JOIN ".$this->db->prefix()."c_country as c ON u.fk_country = c.rowid";
 		$sql .= " LEFT JOIN ".$this->db->prefix()."c_departements as d ON u.fk_state = d.rowid";
+		$sql .= " LEFT JOIN ".$this->db->prefix()."establishment as s ON u.fk_establishment = s.rowid";
 
 		if ($entity < 0) {
 			if ((!isModEnabled('multicompany') || !getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE')) && (!empty($user->entity))) {
@@ -586,7 +596,6 @@ class User extends CommonObject
 				$this->admin		= $obj->admin;
 				$this->note_public = $obj->note_public;
 				$this->note_private = $obj->note_private;
-				$this->note			= $obj->note_private;	// deprecated
 
 				$this->statut		= $obj->status;			// deprecated
 				$this->status		= $obj->status;
@@ -625,6 +634,8 @@ class User extends CommonObject
 				$this->default_range = $obj->default_range;
 				$this->default_c_exp_tax_cat = $obj->default_c_exp_tax_cat;
 				$this->fk_warehouse = $obj->fk_warehouse;
+				$this->fk_establishment = $obj->fk_establishment;
+				$this->label_establishment = $obj->label_establishment;
 
 				// Protection when module multicompany was set, admin was set to first entity and then, the module was disabled,
 				// in such case, this admin user must be admin for ALL entities.
@@ -828,8 +839,17 @@ class User extends CommonObject
 
 		// Special case for external user
 		if (!empty($this->socid)) {
-			if ($module = 'societe' && $permlevel1 = 'client' && $permlevel2 == 'voir') {
+			if ($module == 'societe' && ($permlevel1 == 'creer' || $permlevel1 == 'write')) {
+				return 0;	// An external user never has the permission ->societe->write to see all thirdparties (always restricted to himself)
+			}
+			if ($module == 'societe' && $permlevel1 == 'client' && $permlevel2 == 'voir') {
 				return 0;	// An external user never has the permission ->societe->client->voir to see all thirdparties (always restricted to himself)
+			}
+			if ($module == 'societe' && $permlevel1 == 'export') {
+				return 0;	// An external user never has the permission ->societe->export to see all thirdparties (always restricted to himself)
+			}
+			if ($module == 'societe' && ($permlevel1 == 'supprimer' || $permlevel1 == 'delete')) {
+				return 0;	// An external user never has the permission ->societe->delete to see all thirdparties (always restricted to himself)
 			}
 		}
 
@@ -1016,7 +1036,7 @@ class User extends CommonObject
 
 		if (!$error && !$notrigger) {
 			$langs->load("other");
-			$this->context = array('audit'=>$langs->trans("PermissionsAdd").($rid ? ' (id='.$rid.')' : ''));
+			$this->context = array('audit' => $langs->trans("PermissionsAdd").($rid ? ' (id='.$rid.')' : ''));
 
 			// Call trigger
 			$result = $this->call_trigger('USER_MODIFY', $user);
@@ -1039,12 +1059,12 @@ class User extends CommonObject
 	/**
 	 *  Remove a right to the user
 	 *
-	 *  @param	int		$rid        Id du droit a retirer
-	 *  @param  string	$allmodule  Retirer tous les droits du module allmodule
-	 *  @param  string	$allperms   Retirer tous les droits du module allmodule, perms allperms
-	 *  @param	int		$entity		Entity to use
-	 *  @param  int	    $notrigger	1=Does not execute triggers, 0=Execute triggers
-	 *  @return int         		> 0 if OK, < 0 if OK
+	 *  @param	int			$rid        Id of permission to remove (or 0 when using the other filters)
+	 *  @param  string		$allmodule  Retirer tous les droits du module allmodule
+	 *  @param  string		$allperms   Retirer tous les droits du module allmodule, perms allperms
+	 *  @param	int|string	$entity		Entity to use. Example: '1', or '0,1', or '2,3'
+	 *  @param  int	    	$notrigger	1=Does not execute triggers, 0=Execute triggers
+	 *  @return int         			> 0 if OK, < 0 if OK
 	 *  @see	clearrights(), addrights(), getrights(), hasRight()
 	 */
 	public function delrights($rid, $allmodule = '', $allperms = '', $entity = 0, $notrigger = 0)
@@ -1065,7 +1085,7 @@ class User extends CommonObject
 			$sql = "SELECT module, perms, subperms";
 			$sql .= " FROM ".$this->db->prefix()."rights_def";
 			$sql .= " WHERE id = '".$this->db->escape($rid)."'";
-			$sql .= " AND entity = ".((int) $entity);
+			$sql .= " AND entity IN (".$this->db->sanitize($entity, 0, 0, 0, 0).")";
 
 			$result = $this->db->query($sql);
 			if ($result) {
@@ -1106,17 +1126,17 @@ class User extends CommonObject
 			}
 		}
 
-		// Suppression des droits selon critere defini dans wherefordel
+		// Delete permission according to a criteria set into $wherefordel
 		if (!empty($wherefordel)) {
 			//print "$module-$perms-$subperms";
 			$sql = "SELECT id";
 			$sql .= " FROM ".$this->db->prefix()."rights_def";
-			$sql .= " WHERE entity = ".((int) $entity);
+			$sql .= " WHERE entity IN (".$this->db->sanitize($entity, 0, 0, 0, 0).")";
 			if (!empty($wherefordel) && $wherefordel != 'allmodules') {
 				$sql .= " AND (".$wherefordel.")";	// Note: parenthesis are important because wherefordel can contains OR. Also note that $wherefordel is already sanitized
 			}
 
-			// avoid admin can remove his own important rights
+			// avoid admin to remove his own important rights
 			if ($this->admin == 1) {
 				$sql .= " AND id NOT IN (251, 252, 253, 254, 255, 256)"; // other users rights
 				$sql .= " AND id NOT IN (341, 342, 343, 344)"; // own rights
@@ -1128,7 +1148,7 @@ class User extends CommonObject
 			$sqldelete .= " WHERE fk_user = ".((int) $this->id)." AND fk_id IN (";
 			$sqldelete .= $sql;
 			$sqldelete .= ")";
-			$sqldelete .= " AND entity = ".((int) $entity);
+			$sqldelete .= " AND entity IN (".$this->db->sanitize($entity, 0, 0, 0, 0).")";
 
 			$resql = $this->db->query($sqldelete);
 			if (!$resql) {
@@ -1139,7 +1159,7 @@ class User extends CommonObject
 
 		if (!$error && !$notrigger) {
 			$langs->load("other");
-			$this->context = array('audit'=>$langs->trans("PermissionsDelete").($rid ? ' (id='.$rid.')' : ''));
+			$this->context = array('audit' => $langs->trans("PermissionsDelete").($rid ? ' (id='.$rid.')' : ''));
 
 			// Call trigger
 			$result = $this->call_trigger('USER_MODIFY', $user);
@@ -1183,238 +1203,258 @@ class User extends CommonObject
 	 *	@return	void
 	 *  @see	clearrights(), delrights(), addrights(), hasRight()
 	 */
-	public function getrights($moduletag = '', $forcereload = 0)
+	public function loadRights($moduletag = '', $forcereload = 0)
 	{
 		global $conf;
+
+		$alreadyloaded = false;
 
 		if (empty($forcereload)) {
 			if ($moduletag && isset($this->_tab_loaded[$moduletag]) && $this->_tab_loaded[$moduletag]) {
 				// Rights for this module are already loaded, so we leave
-				return;
+				$alreadyloaded = true;
 			}
 
 			if (!empty($this->all_permissions_are_loaded)) {
 				// We already loaded all rights for this user, so we leave
-				return;
+				$alreadyloaded = true;
 			}
 		}
 
-		// For avoid error
+		// More init to avoid warnings/errors
 		if (!isset($this->rights) || !is_object($this->rights)) {
-			$this->rights = new stdClass(); // For avoid error
+			$this->rights = new stdClass();
 		}
 		if (!isset($this->rights->user) || !is_object($this->rights->user)) {
-			$this->rights->user = new stdClass(); // For avoid error
+			$this->rights->user = new stdClass();
 		}
 
 		// Get permission of users + Get permissions of groups
 
-		// First user permissions
-		$sql = "SELECT DISTINCT r.module, r.perms, r.subperms";
-		$sql .= " FROM ".$this->db->prefix()."user_rights as ur,";
-		$sql .= " ".$this->db->prefix()."rights_def as r";
-		$sql .= " WHERE r.id = ur.fk_id";
-		if (getDolGlobalString('MULTICOMPANY_BACKWARD_COMPATIBILITY')) {
-			// on old version, we use entity defined into table r only
-			$sql .= " AND r.entity IN (0,".(isModEnabled('multicompany') && getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE') ? "1," : "").$conf->entity.")";
-		} else {
-			// On table r=rights_def, the unique key is (id, entity) because id is hard coded into module descriptor and insert during module activation.
-			// So we must include the filter on entity on both table r. and ur.
-			$sql .= " AND r.entity = ".((int) $conf->entity)." AND ur.entity = ".((int) $conf->entity);
-		}
-		$sql .= " AND ur.fk_user= ".((int) $this->id);
-		$sql .= " AND r.perms IS NOT NULL";
-		if (!getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) {
-			$sql .= " AND r.perms NOT LIKE '%_advance'"; // Hide advanced perms if option is not enabled
-		}
-		if ($moduletag) {
-			$sql .= " AND r.module = '".$this->db->escape($moduletag)."'";
-		}
-
-		$resql = $this->db->query($sql);
-		if ($resql) {
-			$num = $this->db->num_rows($resql);
-			$i = 0;
-			while ($i < $num) {
-				$obj = $this->db->fetch_object($resql);
-
-				if ($obj) {
-					$module = $obj->module;
-					$perms = $obj->perms;
-					$subperms = $obj->subperms;
-
-					if (!empty($perms)) {
-						if (!empty($module)) {
-							if (!isset($this->rights->$module) || !is_object($this->rights->$module)) {
-								$this->rights->$module = new stdClass();
-							}
-							if (!empty($subperms)) {
-								if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
-									$this->rights->$module->$perms = new stdClass();
-								}
-								if (empty($this->rights->$module->$perms->$subperms)) {
-									$this->nb_rights++;
-								}
-								$this->rights->$module->$perms->$subperms = 1;
-							} else {
-								if (empty($this->rights->$module->$perms)) {
-									$this->nb_rights++;
-								}
-								$this->rights->$module->$perms = 1;
-							}
-						}
-					}
-				}
-				$i++;
-			}
-			$this->db->free($resql);
-		}
-
-		// Now permissions of groups
-		$sql = "SELECT DISTINCT r.module, r.perms, r.subperms";
-		$sql .= " FROM ".$this->db->prefix()."usergroup_rights as gr,";
-		$sql .= " ".$this->db->prefix()."usergroup_user as gu,";
-		$sql .= " ".$this->db->prefix()."rights_def as r";
-		$sql .= " WHERE r.id = gr.fk_id";
-		// A very strange business rules. Must be same than into user->getrights() user/perms.php and user/group/perms.php
-		if (getDolGlobalString('MULTICOMPANY_BACKWARD_COMPATIBILITY')) {
-			if (isModEnabled('multicompany') && getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE')) {
-				$sql .= " AND gu.entity IN (0,".$conf->entity.")";
+		if (!$alreadyloaded) {
+			// First user permissions
+			$sql = "SELECT DISTINCT r.module, r.perms, r.subperms";
+			$sql .= " FROM ".$this->db->prefix()."user_rights as ur,";
+			$sql .= " ".$this->db->prefix()."rights_def as r";
+			$sql .= " WHERE r.id = ur.fk_id";
+			if (getDolGlobalString('MULTICOMPANY_BACKWARD_COMPATIBILITY')) {
+				// on old version, we use entity defined into table r only
+				$sql .= " AND r.entity IN (0,".(isModEnabled('multicompany') && getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE') ? "1," : "").$conf->entity.")";
 			} else {
-				$sql .= " AND r.entity = ".((int) $conf->entity);
+				// On table r=rights_def, the unique key is (id, entity) because id is hard coded into module descriptor and insert during module activation.
+				// So we must include the filter on entity on both table r. and ur.
+				$sql .= " AND r.entity = ".((int) $conf->entity)." AND ur.entity = ".((int) $conf->entity);
 			}
-		} else {
-			$sql .= " AND gr.entity = ".((int) $conf->entity);	// Only groups created in current entity
-			// The entity on the table usergroup_user should be useless and should never be used because it is already into gr and r.
-			// but when using MULTICOMPANY_TRANSVERSE_MODE, we may insert record that make rubbish result due to duplicate record of
-			// other entities, so we are forced to add a filter here
-			$sql .= " AND gu.entity IN (0,".$conf->entity.")";
-			$sql .= " AND r.entity = ".((int) $conf->entity);	// Only permission of modules enabled in current entity
-		}
-		// End of strange business rule
-		$sql .= " AND gr.fk_usergroup = gu.fk_usergroup";
-		$sql .= " AND gu.fk_user = ".((int) $this->id);
-		$sql .= " AND r.perms IS NOT NULL";
-		if ($moduletag) {
-			$sql .= " AND r.module = '".$this->db->escape($moduletag)."'";
-		}
+			$sql .= " AND ur.fk_user= ".((int) $this->id);
+			$sql .= " AND r.perms IS NOT NULL";
+			if (!getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) {
+				$sql .= " AND r.perms NOT LIKE '%_advance'"; // Hide advanced perms if option is not enabled
+			}
+			if ($moduletag) {
+				$sql .= " AND r.module = '".$this->db->escape($moduletag)."'";
+			}
 
-		$resql = $this->db->query($sql);
-		if ($resql) {
-			$num = $this->db->num_rows($resql);
-			$i = 0;
-			while ($i < $num) {
-				$obj = $this->db->fetch_object($resql);
+			$resql = $this->db->query($sql);
+			if ($resql) {
+				$num = $this->db->num_rows($resql);
+				$i = 0;
+				while ($i < $num) {
+					$obj = $this->db->fetch_object($resql);
 
-				if ($obj) {
-					$module = $obj->module;
-					$perms = $obj->perms;
-					$subperms = $obj->subperms;
+					if ($obj) {
+						$module = $obj->module;
+						$perms = $obj->perms;
+						$subperms = $obj->subperms;
 
-					if (!empty($perms)) {
-						if (!empty($module)) {
-							if (!isset($this->rights->$module) || !is_object($this->rights->$module)) {
-								$this->rights->$module = new stdClass();
-							}
-							if (!empty($subperms)) {
-								if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
-									$this->rights->$module->$perms = new stdClass();
+						if (!empty($perms)) {
+							if (!empty($module)) {
+								if (!isset($this->rights->$module) || !is_object($this->rights->$module)) {
+									$this->rights->$module = new stdClass();
 								}
-								if (empty($this->rights->$module->$perms->$subperms)) {
-									$this->nb_rights++;
-								}
-								$this->rights->$module->$perms->$subperms = 1;
-							} else {
-								if (empty($this->rights->$module->$perms)) {
-									$this->nb_rights++;
-								}
-								// if we have already define a subperm like this $this->rights->$module->level1->level2 with llx_user_rights, we don't want override level1 because the level2 can be not define on user group
-								if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
+								if (!empty($subperms)) {
+									if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
+										$this->rights->$module->$perms = new stdClass();
+									}
+									if (empty($this->rights->$module->$perms->$subperms)) {
+										$this->nb_rights++;
+									}
+									$this->rights->$module->$perms->$subperms = 1;
+								} else {
+									if (empty($this->rights->$module->$perms)) {
+										$this->nb_rights++;
+									}
 									$this->rights->$module->$perms = 1;
 								}
 							}
 						}
 					}
+					$i++;
 				}
-				$i++;
+				$this->db->free($resql);
 			}
-			$this->db->free($resql);
-		}
 
-		// Force permission on user for admin
-		if (!empty($this->admin)) {
-			if (empty($this->rights->user->user)) {
-				$this->rights->user->user = new stdClass();
-			}
-			$listofpermtotest = array('lire', 'creer', 'password', 'supprimer', 'export');
-			foreach ($listofpermtotest as $permtotest) {
-				if (empty($this->rights->user->user->$permtotest)) {
-					$this->rights->user->user->$permtotest = 1;
-					$this->nb_rights++;
+			// Now permissions of groups
+			$sql = "SELECT DISTINCT r.module, r.perms, r.subperms, r.entity";
+			$sql .= " FROM ".$this->db->prefix()."usergroup_rights as gr,";
+			$sql .= " ".$this->db->prefix()."usergroup_user as gu,";
+			$sql .= " ".$this->db->prefix()."rights_def as r";
+			$sql .= " WHERE r.id = gr.fk_id";
+			// @FIXME Very strange business rules. Must be alays the same than into user->getrights() user/perms.php and user/group/perms.php
+			if (getDolGlobalString('MULTICOMPANY_BACKWARD_COMPATIBILITY')) {
+				if (isModEnabled('multicompany') && getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE')) {
+					$sql .= " AND gu.entity IN (0,".$conf->entity.")";
+				} else {
+					$sql .= " AND r.entity = ".((int) $conf->entity);
 				}
+			} else {
+				$sql .= " AND gr.entity = ".((int) $conf->entity);	// Only groups created in current entity
+				// The entity on the table gu=usergroup_user should be useless and should never be used because it is already into gr and r.
+				// but when using MULTICOMPANY_TRANSVERSE_MODE, we may have inserted record that make rubbish result here due to the duplicate record of
+				// other entities, so we are forced to add a filter on gu here
+				$sql .= " AND gu.entity IN (0,".$conf->entity.")";
+				$sql .= " AND r.entity = ".((int) $conf->entity);	// Only permission of modules enabled in current entity
 			}
-			if (empty($this->rights->user->self)) {
-				$this->rights->user->self = new stdClass();
+			// End of strange business rule
+			$sql .= " AND gr.fk_usergroup = gu.fk_usergroup";
+			$sql .= " AND gu.fk_user = ".((int) $this->id);
+			$sql .= " AND r.perms IS NOT NULL";
+			if ($moduletag) {
+				$sql .= " AND r.module = '".$this->db->escape($moduletag)."'";
 			}
-			$listofpermtotest = array('creer', 'password');
-			foreach ($listofpermtotest as $permtotest) {
-				if (empty($this->rights->user->self->$permtotest)) {
-					$this->rights->user->self->$permtotest = 1;
-					$this->nb_rights++;
+
+			$resql = $this->db->query($sql);
+			if ($resql) {
+				$num = $this->db->num_rows($resql);
+				$i = 0;
+				while ($i < $num) {
+					$obj = $this->db->fetch_object($resql);
+
+					if ($obj) {
+						$module = $obj->module;
+						$perms = $obj->perms;
+						$subperms = $obj->subperms;
+
+						if (!empty($perms)) {
+							if (!empty($module)) {
+								if (!isset($this->rights->$module) || !is_object($this->rights->$module)) {
+									$this->rights->$module = new stdClass();
+								}
+								if (!empty($subperms)) {
+									if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
+										$this->rights->$module->$perms = new stdClass();
+									}
+									if (empty($this->rights->$module->$perms->$subperms)) {	// already counted
+										$this->nb_rights++;
+									}
+									$this->rights->$module->$perms->$subperms = 1;
+								} else {
+									if (empty($this->rights->$module->$perms)) {			// already counted
+										$this->nb_rights++;
+									}
+									// if we have already define a subperm like this $this->rights->$module->level1->level2 with llx_user_rights, we don't want override level1 because the level2 can be not define on user group
+									if (!isset($this->rights->$module->$perms) || !is_object($this->rights->$module->$perms)) {
+										$this->rights->$module->$perms = 1;
+									}
+								}
+							}
+						}
+					}
+					$i++;
 				}
+				$this->db->free($resql);
 			}
-			// Add test on advanced permissions
-			if (getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) {
-				if (empty($this->rights->user->user_advance)) {
-					$this->rights->user->user_advance = new stdClass();
+
+			// Force permission on user for admin
+			if (!empty($this->admin)) {
+				if (empty($this->rights->user->user)) {
+					$this->rights->user->user = new stdClass();
 				}
-				$listofpermtotest = array('readperms', 'write');
+				$listofpermtotest = array('lire', 'creer', 'password', 'supprimer', 'export');
 				foreach ($listofpermtotest as $permtotest) {
-					if (empty($this->rights->user->user_advance->$permtotest)) {
-						$this->rights->user->user_advance->$permtotest = 1;
+					if (empty($this->rights->user->user->$permtotest)) {
+						$this->rights->user->user->$permtotest = 1;
 						$this->nb_rights++;
 					}
 				}
-				if (empty($this->rights->user->self_advance)) {
-					$this->rights->user->self_advance = new stdClass();
+				if (empty($this->rights->user->self)) {
+					$this->rights->user->self = new stdClass();
 				}
-				$listofpermtotest = array('readperms', 'writeperms');
+				$listofpermtotest = array('creer', 'password');
 				foreach ($listofpermtotest as $permtotest) {
-					if (empty($this->rights->user->self_advance->$permtotest)) {
-						$this->rights->user->self_advance->$permtotest = 1;
+					if (empty($this->rights->user->self->$permtotest)) {
+						$this->rights->user->self->$permtotest = 1;
 						$this->nb_rights++;
 					}
 				}
-				if (empty($this->rights->user->group_advance)) {
-					$this->rights->user->group_advance = new stdClass();
-				}
-				$listofpermtotest = array('read', 'readperms', 'write', 'delete');
-				foreach ($listofpermtotest as $permtotest) {
-					if (empty($this->rights->user) || empty($this->rights->user->group_advance->$permtotest)) {
-						$this->rights->user->group_advance->$permtotest = 1;
-						$this->nb_rights++;
+				// Add test on advanced permissions
+				if (getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) {
+					if (empty($this->rights->user->user_advance)) {
+						$this->rights->user->user_advance = new stdClass();
+					}
+					$listofpermtotest = array('readperms', 'write');
+					foreach ($listofpermtotest as $permtotest) {
+						if (empty($this->rights->user->user_advance->$permtotest)) {
+							$this->rights->user->user_advance->$permtotest = 1;
+							$this->nb_rights++;
+						}
+					}
+					if (empty($this->rights->user->self_advance)) {
+						$this->rights->user->self_advance = new stdClass();
+					}
+					$listofpermtotest = array('readperms', 'writeperms');
+					foreach ($listofpermtotest as $permtotest) {
+						if (empty($this->rights->user->self_advance->$permtotest)) {
+							$this->rights->user->self_advance->$permtotest = 1;
+							$this->nb_rights++;
+						}
+					}
+					if (empty($this->rights->user->group_advance)) {
+						$this->rights->user->group_advance = new stdClass();
+					}
+					$listofpermtotest = array('read', 'readperms', 'write', 'delete');
+					foreach ($listofpermtotest as $permtotest) {
+						if (empty($this->rights->user) || empty($this->rights->user->group_advance->$permtotest)) {
+							$this->rights->user->group_advance->$permtotest = 1;
+							$this->nb_rights++;
+						}
 					}
 				}
 			}
-		}
 
-		// For backward compatibility
-		if (isset($this->rights->propale) && !isset($this->rights->propal)) {
-			$this->rights->propal = $this->rights->propale;
-		}
-		if (isset($this->rights->propal) && !isset($this->rights->propale)) {
-			$this->rights->propale = $this->rights->propal;
-		}
+			// For backward compatibility
+			if (isset($this->rights->propale) && !isset($this->rights->propal)) {
+				$this->rights->propal = $this->rights->propale;
+			}
+			if (isset($this->rights->propal) && !isset($this->rights->propale)) {
+				$this->rights->propale = $this->rights->propal;
+			}
 
-		if (!$moduletag) {
-			// If the module was not define, then everything is loaded.
-			// Therefore, we can consider that the permissions are cached
-			// because they were all loaded for this user instance.
-			$this->all_permissions_are_loaded = 1;
-		} else {
-			// If the module is defined, we flag it as loaded into cache
-			$this->_tab_loaded[$moduletag] = 1;
+			if (!$moduletag) {
+				// If the module was not define, then everything is loaded.
+				// Therefore, we can consider that the permissions are cached
+				// because they were all loaded for this user instance.
+				$this->all_permissions_are_loaded = 1;
+			} else {
+				// If the module is defined, we flag it as loaded into cache
+				$this->_tab_loaded[$moduletag] = 1;
+			}
 		}
+	}
+
+	/**
+	 *	Load permissions granted to a user->id into object user->rights
+	 *  TODO Remove this method. It has a name conflict with getRights() in CommonObject.
+	 *
+	 *	@param  string	$moduletag		Limit permission for a particular module ('' by default means load all permissions)
+	 *  @param	int		$forcereload	Force reload of permissions even if they were already loaded (ignore cache)
+	 *	@return	void
+	 *
+	 *  @see	clearrights(), delrights(), addrights(), hasRight()
+	 *  @phpstan-ignore-next-line
+	 */
+	public function getrights($moduletag = '', $forcereload = 0)
+	{
+		$this->loadRights($moduletag, $forcereload);
 	}
 
 	/**
@@ -1738,7 +1778,7 @@ class User extends CommonObject
 		$this->civility_code = $contact->civility_code;
 		$this->lastname = $contact->lastname;
 		$this->firstname = $contact->firstname;
-		//$this->gender = $contact->gender;		// contact ha sno gender
+		//$this->gender = $contact->gender;		// contact has no gender
 		$this->email = $contact->email;
 		$this->socialnetworks = $contact->socialnetworks;
 		$this->office_phone = $contact->phone_pro;
@@ -1815,11 +1855,11 @@ class User extends CommonObject
 	public function create_from_member($member, $login = '')
 	{
 		// phpcs:enable
-		global $conf, $user, $langs;
+		global $user;
 
 		// Set properties on new user
 		$this->admin = 0;
-		$this->civility_code = $member->civility_id;
+		$this->civility_code = $member->civility_code;
 		$this->lastname     = $member->lastname;
 		$this->firstname    = $member->firstname;
 		$this->gender		= $member->gender;
@@ -1997,6 +2037,7 @@ class User extends CommonObject
 
 		$this->birth						= empty($this->birth) ? '' : $this->birth;
 		$this->fk_warehouse					= (int) $this->fk_warehouse;
+		$this->fk_establishment				= (int) $this->fk_establishment;
 
 		$this->setUpperOrLowerCase();
 
@@ -2060,7 +2101,7 @@ class User extends CommonObject
 		$sql .= ", employee = ".(int) $this->employee;
 		$sql .= ", login = '".$this->db->escape($this->login)."'";
 		$sql .= ", api_key = ".($this->api_key ? "'".$this->db->escape(dolEncrypt($this->api_key, '', '', 'dolibarr'))."'" : "null");
-		$sql .= ", gender = ".($this->gender != -1 ? "'".$this->db->escape($this->gender)."'" : "null"); // 'man' or 'woman'
+		$sql .= ", gender = ".($this->gender != -1 ? "'".$this->db->escape($this->gender)."'" : "null"); // 'man' or 'woman' or 'other'
 		$sql .= ", birth=".(strval($this->birth) != '' ? "'".$this->db->idate($this->birth, 'tzserver')."'" : 'null');
 		if (!empty($user->admin)) {
 			$sql .= ", admin = ".(int) $this->admin; // admin flag can be set/unset only by an admin user
@@ -2111,6 +2152,7 @@ class User extends CommonObject
 		$sql .= ", default_range = ".($this->default_range > 0 ? $this->default_range : 'null');
 		$sql .= ", default_c_exp_tax_cat = ".($this->default_c_exp_tax_cat > 0 ? $this->default_c_exp_tax_cat : 'null');
 		$sql .= ", fk_warehouse = ".($this->fk_warehouse > 0 ? $this->fk_warehouse : "null");
+		$sql .= ", fk_establishment = ".($this->fk_establishment > 0 ? $this->fk_establishment : "null");
 		$sql .= ", lang = ".($this->lang ? "'".$this->db->escape($this->lang)."'" : "null");
 		$sql .= " WHERE rowid = ".((int) $this->id);
 
@@ -2703,7 +2745,7 @@ class User extends CommonObject
 		$result = $this->db->query($sql);
 		if ($result) {
 			if (!$error && !$notrigger) {
-				$this->context = array('audit'=>$langs->trans("UserSetInGroup"), 'newgroupid'=>$group);
+				$this->context = array('audit' => $langs->trans("UserSetInGroup"), 'newgroupid' => $group);
 
 				// Call trigger
 				$result = $this->call_trigger('USER_MODIFY', $user);
@@ -2758,7 +2800,7 @@ class User extends CommonObject
 		$result = $this->db->query($sql);
 		if ($result) {
 			if (!$error && !$notrigger) {
-				$this->context = array('audit'=>$langs->trans("UserRemovedFromGroup"), 'oldgroupid'=>$group);
+				$this->context = array('audit' => $langs->trans("UserRemovedFromGroup"), 'oldgroupid' => $group);
 
 				// Call trigger
 				$result = $this->call_trigger('USER_MODIFY', $user);
@@ -3056,7 +3098,7 @@ class User extends CommonObject
 
 		global $action;
 		$hookmanager->initHooks(array('userdao'));
-		$parameters = array('id'=>$this->id, 'getnomurl' => &$result);
+		$parameters = array('id' => $this->id, 'getnomurl' => &$result);
 		$reshook = $hookmanager->executeHooks('getNomUrl', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 		if ($reshook > 0) {
 			$result = $hookmanager->resPrint;
@@ -3092,7 +3134,7 @@ class User extends CommonObject
 
 		if ($option == 'xxx') {
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/user/card.php?id='.$this->id.'">';
-			$linkend = '</a>';
+			$linkend = '</a>';  // @phan-suppress-current-line PhanPluginRedundantAssignment
 		}
 
 		if ($option == 'nolink') {
@@ -3289,7 +3331,7 @@ class User extends CommonObject
 			'LDAP_FIELD_NAME'		=> 'lastname',
 			'LDAP_FIELD_FIRSTNAME'	=> 'firstname',
 			'LDAP_FIELD_LOGIN'		=> 'login',
-			'LDAP_FIELD_LOGIN_SAMBA'=> 'login',
+			'LDAP_FIELD_LOGIN_SAMBA' => 'login',
 			'LDAP_FIELD_PHONE'		=> 'office_phone',
 			'LDAP_FIELD_MOBILE'		=> 'user_mobile',
 			'LDAP_FIELD_FAX'		=> 'office_fax',
@@ -3385,11 +3427,13 @@ class User extends CommonObject
 			$info["phpgwContactCatId"] = 0;
 			$info["phpgwContactAccess"] = "public";
 
+			/*
 			if (dol_strlen($this->egroupware_id) == 0) {
 				$this->egroupware_id = 1;
 			}
-
 			$info["phpgwContactOwner"] = $this->egroupware_id;
+			*/
+			$info["phpgwContactOwner"] = 1;
 
 			if ($this->email) {
 				$info["rfc822Mailbox"] = $this->email;
@@ -3631,7 +3675,7 @@ class User extends CommonObject
 	/**
 	 * Return and array with all instantiated first level children users of current user
 	 *
-	 * @return	User[]|int
+	 * @return	User[]|int<-1,-1>
 	 * @see getAllChildIds()
 	 */
 	public function get_children()
@@ -3660,7 +3704,7 @@ class User extends CommonObject
 	/**
 	 *  Load this->parentof that is array(id_son=>id_parent, ...)
 	 *
-	 *  @return     int     Return integer <0 if KO, >0 if OK
+	 *  @return     int<-1,1>     Return integer <0 if KO, >0 if OK
 	 */
 	private function loadParentOf()
 	{
@@ -3699,7 +3743,7 @@ class User extends CommonObject
 	 *
 	 *  @param      int		$deleteafterid      Removed all users including the leaf $deleteafterid (and all its child) in user tree.
 	 *  @param		string	$filter				SQL filter on users. This parameter must not come from user input.
-	 *	@return		array|int	      		  	Array of users $this->users. Note: $this->parentof is also set.
+	 *	@return		int<-1,-1>|array<int,array{rowid:int,id:int,fk_user:int,fk_soc:int,firstname:string,lastname:string,login:string,statut:int,entity:int,email:string,gender:string|int<-1,-1>,admin:int<0,1>,photo:string,fullpath:string,fullname:string,level:int}>  Array of user information (also: $this->users). Note: $this->parentof is also set.
 	 */
 	public function get_full_tree($deleteafterid = 0, $filter = '')
 	{
@@ -3748,6 +3792,10 @@ class User extends CommonObject
 				$this->users[$obj->rowid]['gender'] = $obj->gender;
 				$this->users[$obj->rowid]['admin'] = $obj->admin;
 				$this->users[$obj->rowid]['photo'] = $obj->photo;
+				// fields are filled with build_path_from_id_user
+				$this->users[$obj->rowid]['fullpath'] = '';
+				$this->users[$obj->rowid]['fullname'] = '';
+				$this->users[$obj->rowid]['level'] = 0;
 				$i++;
 			}
 		} else {
@@ -3755,7 +3803,7 @@ class User extends CommonObject
 			return -1;
 		}
 
-		// We add the fullpath property to each elements of first level (no parent exists)
+		// We add the fullpath property to each element of the first level (no parent exists)
 		dol_syslog(get_class($this)."::get_full_tree call to build_path_from_id_user", LOG_DEBUG);
 		foreach ($this->users as $key => $val) {
 			$result = $this->build_path_from_id_user($key, 0); // Process a branch from the root user key (this user has no parent)
@@ -3772,16 +3820,17 @@ class User extends CommonObject
 			$keyfilter2 = '_'.$deleteafterid.'$';
 			$keyfilter3 = '^'.$deleteafterid.'_';
 			$keyfilter4 = '_'.$deleteafterid.'_';
-			foreach ($this->users as $key => $val) {
-				if (preg_match('/'.$keyfilter1.'/', $val['fullpath']) || preg_match('/'.$keyfilter2.'/', $val['fullpath'])
-					|| preg_match('/'.$keyfilter3.'/', $val['fullpath']) || preg_match('/'.$keyfilter4.'/', $val['fullpath'])) {
+			foreach (array_keys($this->users) as $key) {
+				$fullpath = (string) $this->users[$key]['fullpath'];
+				if (preg_match('/'.$keyfilter1.'/', $fullpath) || preg_match('/'.$keyfilter2.'/', $fullpath)
+					|| preg_match('/'.$keyfilter3.'/', $fullpath) || preg_match('/'.$keyfilter4.'/', $fullpath)) {
 					unset($this->users[$key]);
 				}
 			}
 		}
 
 		dol_syslog(get_class($this)."::get_full_tree dol_sort_array", LOG_DEBUG);
-		$this->users = dol_sort_array($this->users, 'fullname', 'asc', true, false);
+		$this->users = dol_sort_array($this->users, 'fullname', 'asc', true, false, 1);
 
 		//var_dump($this->users);
 
@@ -3832,7 +3881,7 @@ class User extends CommonObject
 	 *
 	 * 	@param		int		$id_user		id_user entry to update
 	 * 	@param		int		$protection		Deep counter to avoid infinite loop (no more required, a protection is added with array useridfound)
-	 *	@return		int                     Return integer < 0 if KO (infinite loop), >= 0 if OK
+	 *	@return		int<-1,1>               Return integer < 0 if KO (infinite loop), >= 0 if OK
 	 */
 	public function build_path_from_id_user($id_user, $protection = 0)
 	{
@@ -4072,7 +4121,7 @@ class User extends CommonObject
 		$sql .= forgeSQLFromUniversalSearchCriteria($filter, $errormessage);
 		if ($errormessage) {
 			$this->errors[] = $errormessage;
-			dol_syslog(__METHOD__.' '.join(',', $this->errors), LOG_ERR);
+			dol_syslog(__METHOD__.' '.implode(',', $this->errors), LOG_ERR);
 			return -1;
 		}
 
