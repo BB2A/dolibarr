@@ -9,7 +9,7 @@
  * Copyright (C) 2015-2023  Charlene BENKE          <charlene@patas-monkey.com>
  * Copyright (C) 2016       Raphaël Doursenaud      <rdoursenaud@gpcsolutions.fr>
  * Copyright (C) 2017       Nicolas ZABOURI         <info@inovea-conseil.com>
- * Copyright (C) 2018-2022  Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2018-2024  Frédéric France         <frederic.france@free.fr>
  * Copyright (C) 2022 		Antonin MARCHAL         <antonin@letempledujeu.fr>
  * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
@@ -47,7 +47,7 @@ class ExtraFields
 	/**
 	 * @var array<string,array{label:array<string,string>,type:array<string,string>,size:array<string,string>,default:array<string,string>,computed:array<string,string>,unique:array<string,int>,required:array<string,int>,param:array<string,mixed>,perms:array<string,mixed[]>,list:array<string,int|string>,pos:array<string,int>,totalizable:array<string,int>,help:array<string,string>,printable:array<string,int>,enabled:array<string,int>,langfile:array<string,string>,css:array<string,string>,csslist:array<string,string>,hidden:array<string,int>,mandatoryfieldsofotherentities:array<string,string>,loaded?:int,count:int}> New array to store extrafields definition  Note: count set as present to avoid static analysis notices
 	 */
-	public $attributes;
+	public $attributes = array();
 
 	/**
 	 * @var array<string,bool>	Array with boolean of status of groups
@@ -96,6 +96,10 @@ class ExtraFields
 		'checkbox' => 'ExtrafieldCheckBox',
 		'chkbxlst' => 'ExtrafieldCheckBoxFromList',
 		'link' => 'ExtrafieldLink',
+		'point' => 'ExtrafieldPointGeo',
+		'multipts' => 'ExtrafieldMultiPointGeo',
+		'linestrg' => 'ExtrafieldLinestringGeo',
+		'polygon' => 'ExtrafieldPolygonGeo',
 		'separate' => 'ExtrafieldSeparator',
 	);
 
@@ -107,9 +111,6 @@ class ExtraFields
 	public function __construct($db)
 	{
 		$this->db = $db;
-		$this->error = '';
-		$this->errors = array();
-		$this->attributes = array();
 	}
 
 	/**
@@ -183,6 +184,78 @@ class ExtraFields
 	}
 
 	/**
+	 *  Update an existing extra field parameter
+	 *
+	 *  @param  string			$attrname           Code of attribute
+	 *  @param  string			$label              label of attribute
+	 *  @param  string			$type               Type of attribute ('boolean','int','varchar','text','html','date','datetime','price', 'pricecy', 'phone','mail','password','url','select','checkbox','separate',...)
+	 *  @param  int				$pos                Position of attribute
+	 *  @param  string			$size               Size/length definition of attribute ('5', '24,8', ...). For float, it contains 2 numeric separated with a comma.
+	 *  @param  string			$elementtype        Element type. Same value than object->table_element (Example 'member', 'product', 'thirdparty', ...)
+	 *  @param  int				$unique				Is field unique or not
+	 *  @param  int				$required			Is field required or not
+	 *  @param  string			$default_value		Defaulted value (In database. use the default_value feature for default value on screen. Example: '', '0', 'null', 'avalue')
+	 *  @param  array|string	$param				Params for field (ex for select list : array('options' => array(value'=>'label of option')) )
+	 *  @param  int				$alwayseditable		Is attribute always editable regardless of the document status
+	 *  @param  string			$perms				Permission to check
+	 *  @param  string			$list				Visibility ('0'=never visible, '1'=visible on list+forms, '2'=list only, '3'=form only or 'eval string')
+	 *  @param  string			$help				Text with help tooltip
+	 *  @param  string  		$computed           Computed value
+	 *  @param  string  		$entity    		 	Entity of extrafields (for multicompany modules)
+	 *  @param  string  		$langfile  		 	Language file
+	 *  @param  string  		$enabled  		 	Condition to have the field enabled or not
+	 *  @param  int				$totalizable		Is a measure. Must show a total on lists
+	 *  @param  int             $printable          Is extrafield displayed on PDF
+	 *  @param  array			$moreparams			More parameters. Example: array('css'=>, 'csslist'=>Css on list, 'cssview'=>...)
+	 *  @return int      							Return integer <=0 if KO, >0 if OK
+	 */
+	public function updateExtraField($attrname, $label, $type, $pos, $size, $elementtype, $unique = 0, $required = 0, $default_value = '', $param = '', $alwayseditable = 0, $perms = '', $list = '-1', $help = '', $computed = '', $entity = '', $langfile = '', $enabled = '1', $totalizable = 0, $printable = 0, $moreparams = array())
+	{
+		if (empty($attrname)) {
+			return -1;
+		}
+		if (empty($label)) {
+			return -1;
+		}
+
+		$result = 0;
+
+		if ($type == 'separator' || $type == 'separate') {
+			$type = 'separate';
+			$unique = 0;
+			$required = 0;
+		}	// Force unique and not required if this is a separator field to avoid troubles.
+		if ($elementtype == 'thirdparty') {
+			$elementtype = 'societe';
+		}
+		if ($elementtype == 'contact') {
+			$elementtype = 'socpeople';
+		}
+
+		// Create field into database except for separator type which is not stored in database
+		if ($type != 'separate') {
+			dol_syslog(get_class($this).'::thisupdate', LOG_DEBUG);
+			$result = $this->update($attrname, $label, $type, $size, $elementtype, $unique, $required, $pos, $param, $alwayseditable, $perms, $list, $help, $default_value, $computed, $entity, $langfile, $enabled, $totalizable, $printable, $moreparams);
+		}
+		$err1 = $this->errno;
+		if ($result > 0 || $err1 == 'DB_ERROR_COLUMN_ALREADY_EXISTS' || $type == 'separate') {
+			// Add declaration of field into table
+			dol_syslog(get_class($this).'::thislabel', LOG_DEBUG);
+			$result2 = $this->update_label($attrname, $label, $type, $size, $elementtype, $unique, $required, $pos, $param, $alwayseditable, $perms, $list, $help, $default_value, $computed, $entity, $langfile, $enabled, $totalizable, $printable, $moreparams);
+			$err2 = $this->errno;
+			if ($result2 > 0 || ($err1 == 'DB_ERROR_COLUMN_ALREADY_EXISTS' && $err2 == 'DB_ERROR_RECORD_ALREADY_EXISTS')) {
+				$this->error = '';
+				$this->errno = '0';
+				return 1;
+			} else {
+				return -2;
+			}
+		} else {
+			return -1;
+		}
+	}
+
+	/**
 	 *	Add a new optional attribute.
 	 *  This is a private method. For public method, use addExtraField.
 	 *
@@ -240,6 +313,18 @@ class ExtraFields
 			} elseif ($type == 'link') {
 				$typedb = 'int';
 				$lengthdb = '11';
+			} elseif ($type == 'point') {
+				$typedb = 'point';
+				$lengthdb = '';
+			} elseif ($type == 'multipts') {
+				$typedb = 'multipoint';
+				$lengthdb = '';
+			} elseif ($type == 'linestrg') {
+				$typedb = 'linestring';
+				$lengthdb = '';
+			} elseif ($type == 'polygon') {
+				$typedb = 'polygon';
+				$lengthdb = '';
 			} elseif ($type == 'html') {
 				$typedb = 'text';
 				$lengthdb = $length;
@@ -418,10 +503,11 @@ class ExtraFields
 			$sql .= " ".($cssview ? "'".$this->db->escape($cssview)."'" : "null");
 			$sql .= ')';
 
-			dol_syslog(get_class($this)."::create_label", LOG_DEBUG);
 			if ($this->db->query($sql)) {
+				dol_syslog(get_class($this)."::create_label_success", LOG_DEBUG);
 				return 1;
 			} else {
+				dol_syslog(get_class($this)."::create_label_error", LOG_DEBUG);
 				$this->error = $this->db->lasterror();
 				$this->errno = $this->db->lasterrno();
 				return -1;
@@ -597,6 +683,18 @@ class ExtraFields
 			} elseif ($type == 'link') {
 				$typedb = 'int';
 				$lengthdb = '11';
+			} elseif ($type == 'point') {
+				$typedb = 'point';
+				$lengthdb = '';
+			} elseif ($type == 'multipts') {
+				$typedb = 'multipoint';
+				$lengthdb = '';
+			} elseif ($type == 'linestrg') {
+				$typedb = 'linestring';
+				$lengthdb = '';
+			} elseif ($type == 'polygon') {
+				$typedb = 'polygon';
+				$lengthdb = '';
 			} elseif ($type == 'password') {
 				$typedb = 'varchar';
 				$lengthdb = '128';
@@ -617,19 +715,23 @@ class ExtraFields
 				}
 			}
 
+			dol_syslog(get_class($this).'::DDLUpdateField', LOG_DEBUG);
 			if ($type != 'separate') { // No table update when separate type
 				$result = $this->db->DDLUpdateField($this->db->prefix().$table, $attrname, $field_desc);
 			}
 			if ($result > 0 || $type == 'separate') {
 				if ($label) {
+					dol_syslog(get_class($this).'::update_label', LOG_DEBUG);
 					$result = $this->update_label($attrname, $label, $type, $length, $elementtype, $unique, $required, $pos, $param, $alwayseditable, $perms, $list, $help, $default, $computed, $entity, $langfile, $enabled, $totalizable, $printable, $moreparams);
 				}
 				if ($result > 0) {
 					$sql = '';
 					if ($unique) {
-						$sql = "ALTER TABLE ".$this->db->prefix().$table." ADD UNIQUE INDEX uk_".$table."_".$attrname." (".$attrname.")";
+						dol_syslog(get_class($this).'::update_unique', LOG_DEBUG);
+						$sql = "ALTER TABLE ".$this->db->prefix().$table." ADD UNIQUE INDEX uk_".$table."_".$this->db->sanitize($attrname)." (".$this->db->sanitize($attrname).")";
 					} else {
-						$sql = "ALTER TABLE ".$this->db->prefix().$table." DROP INDEX IF EXISTS uk_".$table."_".$attrname;
+						dol_syslog(get_class($this).'::update_common', LOG_DEBUG);
+						$sql = "ALTER TABLE ".$this->db->prefix().$table." DROP INDEX IF EXISTS uk_".$table."_".$this->db->sanitize($attrname);
 					}
 					dol_syslog(get_class($this).'::update', LOG_DEBUG);
 					$resql = $this->db->query($sql, 1, 'dml');
@@ -654,6 +756,7 @@ class ExtraFields
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
 	 *  Modify description of personalized attribute
+	 * 	This is a private method. For public method, use updateExtraField.
 	 *
 	 *  @param	string	$attrname			Name of attribute
 	 *  @param	string	$label				Label of attribute
@@ -794,8 +897,8 @@ class ExtraFields
 			$sql .= " ".$pos.",";
 			$sql .= " '".$this->db->escape($alwayseditable)."',";
 			$sql .= " '".$this->db->escape($params)."',";
-			$sql .= " '".$this->db->escape($list)."', ";
-			$sql .= " '".$this->db->escape($printable)."', ";
+			$sql .= " '".$this->db->escape($list)."',";
+			$sql .= " ".((int) $printable).",";
 			$sql .= " ".($totalizable ? 'TRUE' : 'FALSE').",";
 			$sql .= " ".(($default != '') ? "'".$this->db->escape($default)."'" : "null").",";
 			$sql .= " ".($computed ? "'".$this->db->escape($computed)."'" : "null").",";
@@ -1136,7 +1239,7 @@ class ExtraFields
 			if (!empty($value)) {		// $value in memory is a php numeric, we format it into user number format.
 				$value = price($value);
 			}
-			$out = '<input type="text" class="flat '.$morecss.' maxwidthonsmartphone" name="'.$keyprefix.$key.$keysuffix.'" id="'.$keyprefix.$key.$keysuffix.'" value="'.$value.'" '.($moreparam ? $moreparam : '').'> '.$langs->getCurrencySymbol($conf->currency);
+			$out = '<input type="text" class="flat '.$morecss.' maxwidthonsmartphone right" name="'.$keyprefix.$key.$keysuffix.'" id="'.$keyprefix.$key.$keysuffix.'" value="'.$value.'" '.($moreparam ? $moreparam : '').' placeholder="'.$langs->getCurrencySymbol($conf->currency).'">';
 		} elseif ($type == 'pricecy') {
 			$currency = $conf->currency;
 			if (!empty($value)) {
@@ -1608,6 +1711,24 @@ class ExtraFields
 
 			//$out = $form->selectForForms($param_list[0], $keyprefix.$key.$keysuffix, $value, $showempty, '', '', $morecss, '', 0, 0, '');
 			$out = $form->selectForForms($tmparray[0], $keyprefix.$key.$keysuffix, $value, $showempty, '', '', $morecss, '', 0, 0, '', $element.':options_'.$key);
+		} elseif (in_array($type, ['point', 'multipts', 'linestrg', 'polygon'])) {
+			require_once DOL_DOCUMENT_ROOT.'/core/class/dolgeophp.class.php';
+			$dolgeophp = new DolGeoPHP($this->db);
+			$geojson = '{}';
+			$centroidjson = getDolGlobalString('MAIN_INFO_SOCIETE_GEO_COORDINATES', '{}');
+			if (!empty($value)) {
+				$tmparray = $dolgeophp->parseGeoString($value);
+				$geojson = $tmparray['geojson'];
+				$centroidjson = $tmparray['centroidjson'];
+			}
+			if (!preg_match('/search_/', $keyprefix)) {
+				require_once DOL_DOCUMENT_ROOT.'/core/class/geomapeditor.class.php';
+				$geomapeditor = new GeoMapEditor();
+				$out .= $geomapeditor->getHtml($keyprefix.$key.$keysuffix, $geojson, $centroidjson, $type);
+			} else {
+				// If keyprefix is search_ or search_options_, we must just use a simple text field
+				$out = ''; // @phan-suppress-current-line PhanPluginRedundantAssignment
+			}
 		} elseif ($type == 'password') {
 			// If prefix is 'search_', field is used as a filter, we use a common text field.
 			$out = '<input style="display:none" type="text" name="fakeusernameremembered">'; // Hidden field to reduce impact of evil Google Chrome autopopulate bug.
@@ -1972,6 +2093,22 @@ class ExtraFields
 					return 'Error bad setup of extrafield';
 				}
 			}
+		} elseif ($type == 'point') {
+			if (!empty($value)) {
+				require_once DOL_DOCUMENT_ROOT.'/core/class/dolgeophp.class.php';
+				$dolgeophp = new DolGeoPHP($this->db);
+				$value = $dolgeophp->getXYString($value);
+			} else {
+				$value = '';
+			}
+		} elseif (in_array($type, ['multipts','linestrg', 'polygon'])) {
+			if (!empty($value)) {
+				require_once DOL_DOCUMENT_ROOT.'/core/class/dolgeophp.class.php';
+				$dolgeophp = new DolGeoPHP($this->db);
+				$value = $dolgeophp->getPointString($value);
+			} else {
+				$value = '';
+			}
 		} elseif ($type == 'text') {
 			$value = dol_htmlentitiesbr($value);
 		} elseif ($type == 'html') {
@@ -2155,7 +2292,7 @@ class ExtraFields
 					continue;
 				}
 
-				if (!empty($onlykey) && $onlykey == '@GETPOSTISSET' && !GETPOSTISSET('options_'.$key) && (! in_array($this->attributes[$object->table_element]['type'][$key], array('boolean', 'checkbox', 'chkbxlst')))) {
+				if (!empty($onlykey) && $onlykey == '@GETPOSTISSET' && !GETPOSTISSET('options_'.$key) && (! in_array($this->attributes[$object->table_element]['type'][$key], array('boolean', 'checkbox', 'chkbxlst', 'point', 'multipts', 'linestrg', 'polygon')))) {
 					//when unticking boolean field, it's not set in POST
 					continue;
 				}
@@ -2241,6 +2378,16 @@ class ExtraFields
 					$value_key = price2num(GETPOST("options_".$key, 'alpha')).':'.GETPOST("options_".$key."currency_id", 'alpha');
 				} elseif (in_array($key_type, array('html'))) {
 					$value_key = GETPOST("options_".$key, 'restricthtml');
+				} elseif (in_array($key_type, ['point', 'multipts', 'linestrg', 'polygon'])) {
+					// construct point
+					require_once DOL_DOCUMENT_ROOT.'/core/class/dolgeophp.class.php';
+					$geojson = GETPOST("options_".$key, 'restricthtml');
+					if ($geojson != '{}') {
+						$dolgeophp = new DolGeoPHP($this->db);
+						$value_key = $dolgeophp->getWkt($geojson);
+					} else {
+						$value_key = '';
+					}
 				} elseif (in_array($key_type, array('text'))) {
 					$label_security_check = 'alphanohtml';
 					// by default 'alphanohtml' (better security); hidden conf MAIN_SECURITY_ALLOW_UNSECURED_LABELS_WITH_HTML allows basic html
@@ -2415,6 +2562,34 @@ class ExtraFields
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Return array with all possible types and labels of extrafields
+	 *
+	 * @return string[]
+	 */
+	public static function getListOfTypesLabels()
+	{
+		global $langs;
+
+		$tmptype2label = ExtraFields::$type2label;
+		$type2label = array('');
+		foreach ($tmptype2label as $key => $val) {
+			$type2label[$key] = $langs->transnoentitiesnoconv($val);
+		}
+
+		if (!getDolGlobalString('MAIN_USE_EXTRAFIELDS_ICON')) {
+			unset($type2label['icon']);
+		}
+		if (!getDolGlobalString('MAIN_USE_GEOPHP')) {
+			unset($type2label['point']);
+			unset($type2label['multipts']);
+			unset($type2label['linestrg']);
+			unset($type2label['polygon']);
+		}
+
+		return $type2label;
 	}
 
 	/**

@@ -564,7 +564,7 @@ if ($type == Categorie::TYPE_PRODUCT) {
 					// Link to delete from category
 					print '<td class="right">';
 					if ($permission) {
-						print "<a href= '".$_SERVER['PHP_SELF']."?".(empty($socid) ? 'id' : 'socid')."=".$object->id."&type=".$typeid."&action=unlink&token=".newToken()."&removeelem=".$prod->id."'>";
+						print '<a class="reposition" href= "'.$_SERVER['PHP_SELF']."?".(empty($socid) ? 'id' : 'socid')."=".((int) $object->id)."&type=".urlencode($typeid)."&action=unlink&token=".newToken()."&removeelem=".$prod->id.'">';
 						print $langs->trans("DeleteFromCat");
 						print img_picto($langs->trans("DeleteFromCat"), 'unlink', '', false, 0, 0, '', 'paddingleft');
 						print "</a>";
@@ -678,6 +678,7 @@ if ($type == Categorie::TYPE_SUPPLIER) {
 		$permission = $user->hasRight('societe', 'creer');
 
 		$socs = $object->getObjectsInCateg($type, 0, $limit, $offset);
+
 		if ($socs < 0) {
 			dol_print_error($db, $object->error, $object->errors);
 		} else {
@@ -738,7 +739,7 @@ if ($type == Categorie::TYPE_SUPPLIER) {
 					// Link to delete from category
 					print '<td class="right">';
 					if ($permission) {
-						print "<a href= '".$_SERVER['PHP_SELF']."?".(empty($socid) ? 'id' : 'socid')."=".$object->id."&type=".$typeid."&action=unlink&token=".newToken()."&removeelem=".$soc->id."'>";
+						print '<a class="reposition" href="'.$_SERVER['PHP_SELF']."?".(empty($socid) ? 'id' : 'socid')."=".$object->id."&type=".$typeid."&action=unlink&token=".newToken()."&removeelem=".$soc->id.($limit?'&limit='.$limit:'').'">';
 						print $langs->trans("DeleteFromCat");
 						print img_picto($langs->trans("DeleteFromCat"), 'unlink', '', false, 0, 0, '', 'paddingleft');
 						print "</a>";
@@ -875,7 +876,8 @@ if ($type == Categorie::TYPE_CONTACT) {
 				print '<table class="noborder centpercent">';
 				print '<tr class="liste_titre"><td>';
 				print $langs->trans("AssignCategoryTo").' &nbsp;';
-				print $form->selectContacts('', '', 'elemid');
+				//print $form->selectcontacts('', '', 'elemid');
+				print $form->select_contact(0, '', 'elemid', '', '', '', 0, 'maxwidth300 widthcentpercentminusx');
 				print '<input type="submit" class="button buttongen" value="'.$langs->trans("ClassifyInCategory").'"></td>';
 				print '</tr>';
 				print '</table>';

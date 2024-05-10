@@ -138,7 +138,10 @@ abstract class CommonObjectLine extends CommonObject
 	public $remise_percent;
 
 	/**
-	 * @var int info_bits
+	 * List of cumulative options:
+	 * Bit 0:	0 for common VAT - 1 if VAT french NPR
+	 * Bit 1:	0 si ligne normal - 1 si bit discount (link to line into llx_remise_except)
+	 * @var int
 	 */
 	public $info_bits;
 
@@ -217,8 +220,7 @@ abstract class CommonObjectLine extends CommonObject
 		$sql = "SELECT ".$label_type.", code from ".$this->db->prefix()."c_units where rowid = ".((int) $this->fk_unit);
 
 		$resql = $this->db->query($sql);
-		if ($resql && $this->db->num_rows($resql) > 0) {
-			$res = $this->db->fetch_array($resql);
+		if ($resql && $this->db->num_rows($resql) > 0 && $res = $this->db->fetch_array($resql)) {
 			if ($label_type == 'code') {
 				$label = 'unit'.$res['code'];
 			} else {

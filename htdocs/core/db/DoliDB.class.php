@@ -26,6 +26,7 @@
 
 require_once DOL_DOCUMENT_ROOT.'/core/db/Database.interface.php';
 
+
 /**
  * Class to manage Dolibarr database access
  */
@@ -36,7 +37,7 @@ abstract class DoliDB implements Database
 	/** Force subclass to implement LABEL - description of DB type */
 	const LABEL = self::LABEL;
 
-	/** @var bool|resource|mysqli|SQLite3|PgSql\Connection|DoliDB Database handler */
+	/** @var false|resource|mysqli|mysqliDoli|SQLite3|PgSql\Connection|DoliDB Database handler */
 	public $db;
 	/** @var string Database type */
 	public $type;
@@ -112,7 +113,7 @@ abstract class DoliDB implements Database
 	 * @param	string	$nameoffield	Name of field
 	 * @return	string					SQL string
 	 */
-	public function stddevPop($nameoffield)
+	public function stddevpop($nameoffield)
 	{
 		return 'STDDEV_POP('.$nameoffield.')';
 	}
@@ -178,11 +179,12 @@ abstract class DoliDB implements Database
 	 * @param   int		$allowsimplequote 	1=Allow simple quotes in string. When string is used as a list of SQL string ('aa', 'bb', ...)
 	 * @param	int		$allowsequals		1=Allow equals sign
 	 * @param	int		$allowsspace		1=Allow space char
+	 * @param	int		$allowschars		1=Allow a-z chars
 	 * @return  string                      String escaped
 	 */
-	public function sanitize($stringtosanitize, $allowsimplequote = 0, $allowsequals = 0, $allowsspace = 0)
+	public function sanitize($stringtosanitize, $allowsimplequote = 0, $allowsequals = 0, $allowsspace = 0, $allowschars = 1)
 	{
-		return preg_replace('/[^a-z0-9_\-\.,'.($allowsequals ? '=' : '').($allowsimplequote ? "\'" : '').($allowsspace ? ' ' : '').']/i', '', $stringtosanitize);
+		return preg_replace('/[^0-9_\-\.,'.($allowschars ? 'a-z' : '').($allowsequals ? '=' : '').($allowsimplequote ? "\'" : '').($allowsspace ? ' ' : '').']/i', '', $stringtosanitize);
 	}
 
 	/**

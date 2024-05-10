@@ -46,6 +46,7 @@ InstallChoiceRecommanded
 IsInPackage
 MailNoChangePossible
 MailSentBy
+MaxNbOfLinesForBoxes
 ModuleBuilderDesc2
 ModulesMarketPlaceDesc
 MoveField
@@ -61,7 +62,6 @@ ResourcesLinkedToElement
 SetupDescription5
 ShowSending
 SomethingMakeInstallFromWebNotPossible2
-StatusMotif0
 StatusOrderProcessed
 SuppliersOrdersRunning
 TasksOnOpenedProject
@@ -69,7 +69,9 @@ ThirdPartyCustomersWithIdProf12
 TicketPublicInfoCreateTicket
 TitreRequestCP
 UseAsciiDocFormat
+UsePassword
 ViewPageInNewTab
+WEBSITE_PAGE_EXAMPLE
 YourTicketSuccessfullySaved
 #
 # ██████╗  █████╗ ██████╗ ████████╗██████╗
@@ -103,7 +105,6 @@ Adherent
 AdherentNotLinkedToThirdParty
 AdvTgtUse
 Agents
-AllEntities
 AllFilesDidAlreadyExist
 AlreadyInV7
 AmountOfOrders
@@ -312,7 +313,6 @@ Empty
 End
 EnterAnIP
 EnterNameOfDictionnaryToDeleteDesc
-EntityNameNotDefined
 Entries
 ErrSCAAuthentication
 Error sql
@@ -668,7 +668,6 @@ PendingCreditTransferToComplete
 PendingCreditTransferToCompleteShort
 PendingDirectDebitToComplete
 PendingDirectDebitToCompleteShort
-PermissionAdvanced
 Picto
 PlanStripe
 Poll

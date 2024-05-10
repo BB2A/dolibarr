@@ -52,12 +52,6 @@ class Productlot extends CommonObject
 	 */
 	public $picto = 'lot';
 
-	/**
-	 * @var int<0,1>|string  	Does this object support multicompany module ?
-	 * 							0=No test on entity, 1=Test with field entity, 'field@table'=Test with link by field@table (example 'fk_soc@societe')
-	 */
-	public $ismultientitymanaged = 1;
-
 	public $stats_propale;
 	public $stats_commande;
 	public $stats_contrat;
@@ -173,6 +167,8 @@ class Productlot extends CommonObject
 	public function __construct(DoliDB $db)
 	{
 		$this->db = $db;
+
+		$this->ismultientitymanaged = 1;
 	}
 
 	/**
@@ -560,7 +556,7 @@ class Productlot extends CommonObject
 
 		// $this->oldcopy should have been set by the caller of update (here properties were already modified)
 		if (empty($this->oldcopy)) {
-			$this->oldcopy = dol_clone($this);
+			$this->oldcopy = dol_clone($this, 2);
 		}
 
 		if (!$error) {

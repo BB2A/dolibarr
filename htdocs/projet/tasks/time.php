@@ -77,8 +77,7 @@ $search_date_endyear = GETPOSTINT('search_date_endyear');
 $search_date_start = dol_mktime(0, 0, 0, $search_date_startmonth, $search_date_startday, $search_date_startyear); // Use tzserver
 $search_date_end = dol_mktime(23, 59, 59, $search_date_endmonth, $search_date_endday, $search_date_endyear);
 $search_note = GETPOST('search_note', 'alpha');
-$search_duration = GETPOSTINT('search_duration');
-$search_value = GETPOSTINT('search_value');
+$search_duration = GETPOST('search_duration', 'alpha');
 $search_task_ref = GETPOST('search_task_ref', 'alpha');
 $search_task_label = GETPOST('search_task_label', 'alpha');
 $search_user = GETPOST('search_user', 'intcomma');
@@ -2279,6 +2278,7 @@ if (($id > 0 || !empty($ref)) || $projectidforalltimes > 0 || $allprojectforuser
 					$userstatic->firstname = $task_time->firstname;
 					$userstatic->photo = $task_time->photo;
 					$userstatic->status = $task_time->user_status;
+
 					print $userstatic->getNomUrl(-1);
 				}
 				print '</td>';
