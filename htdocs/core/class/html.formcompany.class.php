@@ -1,6 +1,4 @@
 <?php
-use PhpParser\Node\Stmt\Label;
-
 /* Copyright (C) 2008-2012	Laurent Destailleur	<eldy@users.sourceforge.net>
  * Copyright (C) 2008-2012	Regis Houssin		<regis.houssin@inodbox.com>
  * Copyright (C) 2014		Juanjo Menent		<jmenent@2byte.es>
@@ -889,7 +887,7 @@ class FormCompany extends Form
 					$selected = $newselected;
 				}
 			}
-			return $this->multiselectarray($htmlname, $contactType, $selected, 0, 0, $morecss);
+			return $this->multiselectarray($htmlname, $contactType, $selected, 0, 0, $morecss, 0, '90%');
 		}
 
 		return 'ErrorBadValueForParameterRenderMode'; // Should not happened
@@ -1136,7 +1134,7 @@ class FormCompany extends Form
 		} else {
 			if ($selected > 0) {
 				$arr = $this->typent_array(0);
-				$typent = $arr[$selected];
+				$typent = empty($arr[$selected]) ? '' : $arr[$selected];
 				$out .= $typent;
 			} else {
 				$out .= "&nbsp;";

@@ -31,7 +31,7 @@
 
 /**
  *  \file       htdocs/commande/class/commande.class.php
- *  \ingroup    commande
+ *  \ingroup    order
  *  \brief      class for orders
  */
 
@@ -190,19 +190,19 @@ class Commande extends CommonOrder
 	public $demand_reason_code;
 
 	/**
-	 * @var int Date of order
+	 * @var null|int|'' Date of order
 	 */
 	public $date;
 
 	/**
-	 * @var int Date of order
+	 * @var null|int|'' Date of order
 	 * @deprecated
 	 * @see $date
 	 */
 	public $date_commande;
 
 	/**
-	 * @var int	Date expected of shipment (date of start of shipment, not the reception that occurs some days after)
+	 * @var null|int|''	Date expected of shipment (date of start of shipment, not the reception that occurs some days after)
 	 */
 	public $delivery_date;
 
@@ -363,7 +363,12 @@ class Commande extends CommonOrder
 	 * Shipment on process
 	 */
 	const STATUS_SHIPMENTONPROCESS = 2;		// We set this status when a shipment is validated
-	const STATUS_ACCEPTED = 2; 				// For backward compatibility. Use key STATUS_SHIPMENTONPROCESS instead.
+
+	/**
+	 * For backward compatibility. Use key STATUS_SHIPMENTONPROCESS instead.
+	 * @deprecated
+	 */
+	const STATUS_ACCEPTED = 2;
 
 	/**
 	 * Closed (Sent, billed or not)
@@ -1705,6 +1710,7 @@ class Commande extends CommonOrder
 
 				if ($result > 0) {
 					$this->db->commit();
+					$this->lines[] = $this->line;
 					return $this->line->id;
 				} else {
 					$this->db->rollback();
@@ -3231,7 +3237,7 @@ class Commande extends CommonOrder
 			$this->line->localtax1_type = empty($localtaxes_type[0]) ? '' : $localtaxes_type[0];
 			$this->line->localtax2_type = empty($localtaxes_type[2]) ? '' : $localtaxes_type[2];
 			$this->line->remise_percent = $remise_percent;
-			$this->line->subprice       = $subprice;
+			$this->line->subprice       = $pu_ht;
 			$this->line->info_bits      = $info_bits;
 			$this->line->special_code   = $special_code;
 			$this->line->total_ht       = $total_ht;
@@ -3754,7 +3760,7 @@ class Commande extends CommonOrder
 			$datas['RefCustomer'] = '<br><b>'.$langs->trans('RefCustomer').':</b> '.(empty($this->ref_customer) ? (empty($this->ref_client) ? '' : $this->ref_client) : $this->ref_customer);
 			if (!$nofetch) {
 				$langs->load('project');
-				if (empty($this->project)) {
+				if (is_null($this->project) || (is_object($this->project) && $this->project->isEmpty())) {
 					$res = $this->fetch_project();
 					if ($res > 0 && $this->project instanceof Project) {
 						$datas['project'] = '<br><b>'.$langs->trans('Project').':</b> '.$this->project->getNomUrl(1, '', 0, 1);

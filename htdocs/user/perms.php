@@ -85,7 +85,7 @@ $object->getrights();
 
 $entity = $conf->entity;
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('usercard', 'userperms', 'globalcard'));
 
 
@@ -149,7 +149,7 @@ $form = new Form($db);
 $person_name = !empty($object->firstname) ? $object->lastname.", ".$object->firstname : $object->lastname;
 $title = $person_name." - ".$langs->trans('Permissions');
 $help_url = '';
-llxHeader('', $title, $help_url);
+llxHeader('', $title, $help_url, '', 0, 0, '', '', '', 'mod-user page-card_perms');
 
 $head = user_prepare_head($object);
 

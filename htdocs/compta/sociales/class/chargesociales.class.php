@@ -22,7 +22,7 @@
 
 /**
  *      \file       htdocs/compta/sociales/class/chargesociales.class.php
- *		\ingroup    facture
+ *		\ingroup    invoice
  *		\brief      File for the ChargesSociales class
  */
 require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
@@ -73,21 +73,6 @@ class ChargeSociales extends CommonObject
 	 */
 	public $periode;
 	public $period;
-
-	/**
-	 * @var integer|string date_creation
-	 */
-	public $date_creation;
-
-	/**
-	 * @var integer|string $date_modification
-	 */
-	public $date_modification;
-
-	/**
-	 * @var integer|string $date_validation
-	 */
-	public $date_validation;
 
 	/**
 	 * @deprecated Use label instead

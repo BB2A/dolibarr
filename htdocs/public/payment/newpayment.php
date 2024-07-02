@@ -979,9 +979,9 @@ if (empty($text)) {
 print $text;
 
 // Output payment summary form
-print '<tr><td align="center">';
-print '<table with="100%" id="tablepublicpayment">';
-print '<tr><td align="left" colspan="2" class="opacitymedium">'.$langs->trans("ThisIsInformationOnPayment").' :</td></tr>'."\n";
+print '<tr><td align="center">';	// class=center does not have the payment button centered so we keep align here.
+print '<table class="centpercent left" id="tablepublicpayment">';
+print '<tr class="hideonsmartphone"><td colspan="2" align="left" class="opacitymedium">'.$langs->trans("ThisIsInformationOnPayment").' :</td></tr>'."\n";
 
 $found = false;
 $error = 0;
@@ -1172,6 +1172,7 @@ if ($source == 'order') {
 if ($source == 'invoice') {
 	$found = true;
 	$langs->load("bills");
+	$form->load_cache_types_paiements();
 
 	require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 
@@ -1267,6 +1268,15 @@ if ($source == 'invoice') {
 	print '<input type="hidden" name="tag" value="'.(empty($tag) ? '' : $tag).'">';
 	print '<input type="hidden" name="fulltag" value="'.$fulltag.'">';
 	print '</td></tr>'."\n";
+
+	// Add a warning if we try to pay an invoice set to be paid in credit transfer
+	if ($invoice->status == $invoice::STATUS_VALIDATED && $invoice->mode_reglement_id > 0 && $form->cache_types_paiements[$invoice->mode_reglement_id]["code"] == "VIR") {
+		print '<tr class="CTableRow2 center"><td class="CTableRow2" colspan="2">';
+		print '<div class="warning maxwidth1000">';
+		print $langs->trans("PayOfBankTransferInvoice");
+		print '</div>';
+		print '</td></tr>'."\n";
+	}
 
 	// Shipping address
 	$shipToName = $invoice->thirdparty->name;
@@ -2129,24 +2139,31 @@ if ($action != 'dopayment') {
 			}
 
 			if ((empty($paymentmethod) || $paymentmethod == 'stripe') && isModEnabled('stripe')) {
-				print '<div class="button buttonpayment" id="div_dopayment_stripe"><span class="fa fa-credit-card"></span> <input class="" type="submit" id="dopayment_stripe" name="dopayment_stripe" value="'.$langs->trans("StripeDoPayment").'">';
-				print '<input type="hidden" name="noidempotency" value="'.GETPOSTINT('noidempotency').'">';
-				print '<br>';
-				print '<span class="buttonpaymentsmall">'.$langs->trans("CreditOrDebitCard").'</span>';
-				print '</div>';
-				print '<script>
-						$( document ).ready(function() {
-							$("#div_dopayment_stripe").click(function(){
-								$("#dopayment_stripe").click();
+				$showbutton = 1;
+				if (getDolGlobalString(strtoupper($source).'_FORCE_DISABLE_STRIPE')) {	// Example: MEMBER_FORCE_DISABLE_STRIPE
+					$showbutton = 0;
+				}
+
+				if ($showbutton) {
+					print '<div class="button buttonpayment" id="div_dopayment_stripe"><span class="fa fa-credit-card"></span> <input class="" type="submit" id="dopayment_stripe" name="dopayment_stripe" value="'.$langs->trans("StripeDoPayment").'">';
+					print '<input type="hidden" name="noidempotency" value="'.GETPOSTINT('noidempotency').'">';
+					print '<br>';
+					print '<span class="buttonpaymentsmall">'.$langs->trans("CreditOrDebitCard").'</span>';
+					print '</div>';
+					print '<script>
+							$( document ).ready(function() {
+								$("#div_dopayment_stripe").click(function(){
+									$("#dopayment_stripe").click();
+								});
+								$("#dopayment_stripe").click(function(e){
+									$("#div_dopayment_stripe").css( \'cursor\', \'wait\' );
+								    e.stopPropagation();
+									return true;
+								});
 							});
-							$("#dopayment_stripe").click(function(e){
-								$("#div_dopayment_stripe").css( \'cursor\', \'wait\' );
-							    e.stopPropagation();
-								return true;
-							});
-						});
-					  </script>
-				';
+						  </script>
+					';
+				}
 			}
 
 			if ((empty($paymentmethod) || $paymentmethod == 'paypal') && isModEnabled('paypal')) {
@@ -2154,34 +2171,41 @@ if ($action != 'dopayment') {
 					$conf->global->PAYPAL_API_INTEGRAL_OR_PAYPALONLY = 'integral';
 				}
 
-				print '<div class="button buttonpayment" id="div_dopayment_paypal">';
-				if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') != 'integral') {
-					print '<div style="line-height: 1em">&nbsp;</div>';
+				$showbutton = 1;
+				if (getDolGlobalString(strtoupper($source).'_FORCE_DISABLE_PAYPAL')) {	// Example: MEMBER_FORCE_DISABLE_PAYPAL
+					$showbutton = 0;
 				}
-				print '<span class="fab fa-paypal"></span> <input class="" type="submit" id="dopayment_paypal" name="dopayment_paypal" value="'.$langs->trans("PaypalDoPayment").'">';
-				if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') == 'integral') {
-					print '<br>';
-					print '<span class="buttonpaymentsmall">'.$langs->trans("CreditOrDebitCard").'</span><span class="buttonpaymentsmall"> - </span>';
-					print '<span class="buttonpaymentsmall">'.$langs->trans("PayPalBalance").'</span>';
-				}
-				if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') == 'paypalonly') {
-					//print '<br>';
-					//print '<span class="buttonpaymentsmall">'.$langs->trans("PayPalBalance").'"></span>';
-				}
-				print '</div>';
-				print '<script>
-						$( document ).ready(function() {
-							$("#div_dopayment_paypal").click(function(){
-								$("#dopayment_paypal").click();
+
+				if ($showbutton) {
+					print '<div class="button buttonpayment" id="div_dopayment_paypal">';
+					if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') != 'integral') {
+						print '<div style="line-height: 1em">&nbsp;</div>';
+					}
+					print '<span class="fab fa-paypal"></span> <input class="" type="submit" id="dopayment_paypal" name="dopayment_paypal" value="'.$langs->trans("PaypalDoPayment").'">';
+					if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') == 'integral') {
+						print '<br>';
+						print '<span class="buttonpaymentsmall">'.$langs->trans("CreditOrDebitCard").'</span><span class="buttonpaymentsmall"> - </span>';
+						print '<span class="buttonpaymentsmall">'.$langs->trans("PayPalBalance").'</span>';
+					}
+					if (getDolGlobalString('PAYPAL_API_INTEGRAL_OR_PAYPALONLY') == 'paypalonly') {
+						//print '<br>';
+						//print '<span class="buttonpaymentsmall">'.$langs->trans("PayPalBalance").'"></span>';
+					}
+					print '</div>';
+					print '<script>
+							$( document ).ready(function() {
+								$("#div_dopayment_paypal").click(function(){
+									$("#dopayment_paypal").click();
+								});
+								$("#dopayment_paypal").click(function(e){
+									$("#div_dopayment_paypal").css( \'cursor\', \'wait\' );
+								    e.stopPropagation();
+									return true;
+								});
 							});
-							$("#dopayment_paypal").click(function(e){
-								$("#div_dopayment_paypal").css( \'cursor\', \'wait\' );
-							    e.stopPropagation();
-								return true;
-							});
-						});
-					  </script>
-				';
+						  </script>
+					';
+				}
 			}
 		}
 	} else {

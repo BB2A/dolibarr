@@ -75,7 +75,7 @@ if (!$sortfield) {
 	$sortfield = "c.dateadh";
 }
 
-// Initialize technical objects
+// Initialize a technical objects
 $object = new Subscription($db);
 $extrafields = new ExtraFields($db);
 $hookmanager->initHooks(array('subscriptionlist'));
@@ -333,7 +333,7 @@ if ($optioncss != '') {
 // Add $param from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_param.tpl.php';
 // Add $param from hooks
-$parameters = array();
+$parameters = array('param' => &$param);
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 

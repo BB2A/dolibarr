@@ -74,7 +74,7 @@ class Account extends CommonObject
 	 * @deprecated
 	 * @see $type
 	 */
-	private $courant;
+	private $courant; // @phpstan-ignore-line
 
 	/**
 	 * Bank account type. Check TYPE_ constants. It's integer but Company bank account use string to identify type account
@@ -278,7 +278,7 @@ class Account extends CommonObject
 	 * @deprecated
 	 * @see $balance
 	 */
-	private $solde;
+	private $solde; // @phpstan-ignore-line
 
 	/**
 	 * Balance. Used in Account::create
@@ -895,7 +895,7 @@ class Account extends CommonObject
 	 */
 	public function update(User $user, $notrigger = 0)
 	{
-		global $langs, $conf;
+		global $langs;
 
 		$error = 0;
 
@@ -1172,10 +1172,11 @@ class Account extends CommonObject
 	/**
 	 *  Delete bank account from database
 	 *
-	 *  @param	User|null	$user	User deleting
-	 *  @return int      	       	Return integer <0 if KO, >0 if OK
+	 *  @param	User|null	$user		User deleting
+	 *	@param  int			$notrigger	1=Disable triggers
+	 *  @return int      	       		Return integer <0 if KO, >0 if OK
 	 */
-	public function delete(User $user = null)
+	public function delete(User $user = null, $notrigger = 0)
 	{
 		$error = 0;
 
@@ -1442,7 +1443,7 @@ class Account extends CommonObject
 	 */
 	public function countAccountToReconcile()
 	{
-		global $db, $conf, $user;
+		global $user;
 
 		//Protection against external users
 		if ($user->socid) {
@@ -1458,6 +1459,7 @@ class Account extends CommonObject
 		if (!getDolGlobalString('BANK_CAN_RECONCILIATE_CASHACCOUNT')) {
 			$sql .= " AND ba.courant != " . Account::TYPE_CASH;
 		}
+
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$obj = $this->db->fetch_object($resql);

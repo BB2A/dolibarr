@@ -34,7 +34,7 @@ require_once DOL_DOCUMENT_ROOT.'/ticket/class/ticketstats.class.php';
 
 $hookmanager = new HookManager($db);
 
-// Initialize technical object to manage hooks. Note that conf->hooks_modules contains array
+// Initialize a technical object to manage hooks. Note that conf->hooks_modules contains array
 $hookmanager->initHooks(array('ticketsindex'));
 
 // Load translation files required by the page
@@ -87,7 +87,8 @@ $max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT', 5);
 
 $resultboxes = FormOther::getBoxesArea($user, "11"); // Load $resultboxes (selectboxlist + boxactivated + boxlista + boxlistb)
 
-llxHeader('', $langs->trans('TicketsIndex'), '');
+$help_url = '';
+llxHeader('', $langs->trans('TicketsIndex'), $help_url, '', 0, 0, '', '', '', 'mod-ticket page-dashboard');
 
 $linkback = '';
 print load_fiche_titre($langs->trans('TicketsIndex'), $resultboxes['selectboxlist'], 'ticket');

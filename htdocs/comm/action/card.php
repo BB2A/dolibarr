@@ -135,7 +135,7 @@ if ($id > 0 && $action != 'add') {
 // fetch optionals attributes and labels
 $extrafields->fetch_name_optionals_label($object->table_element);
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('actioncard', 'globalcard'));
 
 $parameters = array('socid' => $socid);
@@ -770,11 +770,11 @@ if (empty($reshook) && $action == 'update') {
 		if ($fulldayevent) {
 			$tzforfullday = getDolGlobalString('MAIN_STORE_FULL_EVENT_IN_GMT');
 			// For "full day" events, we must store date in GMT (It must be viewed as same moment everywhere)
-			$datep = dol_mktime($fulldayevent ? '00' : GETPOSTINT("aphour"), $fulldayevent ? '00' : GETPOSTINT("apmin"), $fulldayevent ? '00' : GETPOSTINT("apsec"), GETPOSTINT("apmonth"), GETPOSTINT("apday"), GETPOSTINT("apyear"), $tzforfullday ? $tzforfullday : 'tzuserrel');
-			$datef = dol_mktime($fulldayevent ? '23' : GETPOSTINT("p2hour"), $fulldayevent ? '59' : GETPOSTINT("p2min"), $fulldayevent ? '59' : GETPOSTINT("apsec"), GETPOSTINT("p2month"), GETPOSTINT("p2day"), GETPOSTINT("p2year"), $tzforfullday ? $tzforfullday : 'tzuserrel');
+			$datep = dol_mktime('00', '00', '00', GETPOST("apmonth", 'int'), GETPOST("apday", 'int'), GETPOST("apyear", 'int'), $tzforfullday ? $tzforfullday : 'tzuserrel');
+			$datef = dol_mktime('23', '59', '59', GETPOST("p2month", 'int'), GETPOST("p2day", 'int'), GETPOST("p2year", 'int'), $tzforfullday ? $tzforfullday : 'tzuserrel');
 		} else {
-			$datep = dol_mktime($fulldayevent ? '00' : GETPOSTINT("aphour"), $fulldayevent ? '00' : GETPOSTINT("apmin"), $fulldayevent ? '00' : GETPOSTINT("apsec"), GETPOSTINT("apmonth"), GETPOSTINT("apday"), GETPOSTINT("apyear"), 'tzuserrel');
-			$datef = dol_mktime($fulldayevent ? '23' : GETPOSTINT("p2hour"), $fulldayevent ? '59' : GETPOSTINT("p2min"), $fulldayevent ? '59' : GETPOSTINT("apsec"), GETPOSTINT("p2month"), GETPOSTINT("p2day"), GETPOSTINT("p2year"), 'tzuserrel');
+			$datep = dol_mktime(GETPOST("aphour", 'int'), GETPOST("apmin", 'int'), GETPOST("apsec", 'int'), GETPOST("apmonth", 'int'), GETPOST("apday", 'int'), GETPOST("apyear", 'int'), 'tzuserrel');
+			$datef = dol_mktime(GETPOST("p2hour", 'int'), GETPOST("p2min", 'int'), GETPOST("apsec", 'int'), GETPOST("p2month", 'int'), GETPOST("p2day", 'int'), GETPOST("p2year", 'int'), 'tzuserrel');
 		}
 
 		if ($object->elementtype == 'ticket') {	// code should be TICKET_MSG, TICKET_MSG_PRIVATE, TICKET_MSG_SENTBYMAIL, TICKET_MSG_PRIVATE_SENTBYMAIL
@@ -1278,7 +1278,8 @@ if ($action == 'create') {
 	print '<tr><td'.(!getDolGlobalString('AGENDA_USE_EVENT_TYPE') ? ' class="fieldrequired titlefieldcreate"' : '').'>'.$langs->trans("Label").'</td><td><input type="text" id="label" name="label" class="soixantepercent" value="'.GETPOST('label').'"></td></tr>';
 
 	// Full day
-	print '<tr><td><span class="fieldrequired">'.$langs->trans("Date").'</span></td><td class="valignmiddle height30 small"><input type="checkbox" id="fullday" name="fullday" '.(GETPOST('fullday') ? ' checked' : '').'><label for="fullday">'.$langs->trans("EventOnFullDay").'</label>';
+	print '<tr><td><span class="fieldrequired">'.$langs->trans("Date").'</span></td>';
+	print '<td class="valignmiddle height30 small"><input class="valignmiddle" type="checkbox" id="fullday" name="fullday" '.(GETPOST('fullday') ? ' checked' : '').'><label for="fullday" class="valignmiddle">'.$langs->trans("EventOnFullDay").'</label>';
 
 	// Recurring event
 	$userepeatevent = (getDolGlobalInt('MAIN_FEATURES_LEVEL') >= 1 ? 1 : 0);
@@ -1286,7 +1287,7 @@ if ($action == 'create') {
 		// Repeat
 		//print '<tr><td></td><td colspan="3" class="opacitymedium">';
 		print ' &nbsp; &nbsp; &nbsp; &nbsp; <div class="opacitymedium inline-block">';
-		print img_picto($langs->trans("Recurrence"), 'recurring', 'class="paddingright2"');
+		print img_picto($langs->trans("Recurrence"), 'recurring', 'style="margin-left: 6px" class="paddingright2"');
 		print '<input type="hidden" name="recurid" value="'.(empty($object->recurid) ? '' : $object->recurid).'">';
 
 		$selectedrecurrulefreq = 'no';
@@ -1378,7 +1379,7 @@ if ($action == 'create') {
 	}
 	if (empty($datef) && !empty($datep)) {
 		if (GETPOST("actioncode", 'aZ09') == 'AC_RDV' || !getDolGlobalString('AGENDA_USE_EVENT_TYPE_DEFAULT')) {
-			$datef = dol_time_plus_duree($datep, (!getDolGlobalString('AGENDA_AUTOSET_END_DATE_WITH_DELTA_HOURS') ? 1 : $conf->global->AGENDA_AUTOSET_END_DATE_WITH_DELTA_HOURS), 'h');
+			$datef = dol_time_plus_duree($datep, getDolGlobalInt('AGENDA_AUTOSET_END_DATE_WITH_DELTA_HOURS', 1), 'h');
 		}
 	}
 
@@ -1390,7 +1391,7 @@ if ($action == 'create') {
 	} else {
 		print $form->selectDate($datep, 'ap', 1, 1, 1, "action", 1, 2, 0, 'fulldaystart', '', '', '', 1, '', '', 'tzuserrel');
 	}
-	print ' <span class="hideonsmartphone">&nbsp; &nbsp; - &nbsp; &nbsp;</span> ';
+	print ' <span class="hideonsmartphone">&nbsp; &nbsp; - &nbsp; &nbsp;</span><br class="showonsmartphone"> ';
 	print $form->selectDate($datef, 'p2', 1, 1, 1, "action", 1, 2, 0, 'fulldayend', '', '', '', 1, '', '', 'tzuserrel');
 	print '</td></tr>';
 
@@ -1596,7 +1597,7 @@ if ($action == 'create') {
 		$hasPermissionOnLinkedObject = 0;
 
 		$elProp = getElementProperties($origin);
-		if ($user->hasRight($elProp['module'], 'read')) {
+		if ($user->hasRight($elProp['module'], 'read') || $user->hasRight($elProp['module'], $elProp['element'], 'read')) {
 			$hasPermissionOnLinkedObject = 1;
 		}
 		//var_dump('origin='.$origin.' originid='.$originid.' hasPermissionOnLinkedObject='.$hasPermissionOnLinkedObject);

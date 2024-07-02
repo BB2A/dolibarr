@@ -105,9 +105,9 @@ $extrafields->fetch_name_optionals_label($object->table_element_line);
 $extrafields->fetch_name_optionals_label($objectorder->table_element_line);
 
 // Load object. Make an object->fetch
-include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be include, not include_once
+include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be 'include', not 'include_once'
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('expeditioncard', 'globalcard'));
 
 $date_delivery = dol_mktime(GETPOSTINT('date_deliveryhour'), GETPOSTINT('date_deliverymin'), 0, GETPOSTINT('date_deliverymonth'), GETPOSTINT('date_deliveryday'), GETPOSTINT('date_deliveryyear'));
@@ -152,7 +152,7 @@ if (empty($reshook)) {
 		}
 	}
 
-	include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be include, not include_once
+	include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be 'include', not 'include_once'
 
 	// Actions to build doc
 	$upload_dir = $conf->expedition->dir_output.'/sending';
@@ -198,16 +198,17 @@ if (empty($reshook)) {
 
 	if ($action == 'update_extras') {
 		$object->oldcopy = dol_clone($object, 2);
+		$attribute_name = GETPOST('attribute', 'restricthtml');
 
 		// Fill array 'array_options' with data from update form
-		$ret = $extrafields->setOptionalsFromPost(null, $object, GETPOST('attribute', 'restricthtml'));
+		$ret = $extrafields->setOptionalsFromPost(null, $object, $attribute_name);
 		if ($ret < 0) {
 			$error++;
 		}
 
 		if (!$error) {
 			// Actions on extra fields
-			$result = $object->insertExtraFields('SHIPMENT_MODIFY');
+			$result = $object->updateExtraField($attribute_name, 'SHIPMENT_MODIFY');
 			if ($result < 0) {
 				setEventMessages($object->error, $object->errors, 'errors');
 				$error++;
@@ -1413,9 +1414,41 @@ if ($action == 'create') {
 									//var_dump($dbatch);
 									$batchStock = + $dbatch->qty; // To get a numeric
 									$deliverableQty = min($quantityToBeDelivered, $batchStock);
+
+									// Now we will check if we have to reduce the deliverableQty by taking into account the qty already suggested in previous line
+									if (isset($alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)])) {
+										$deliverableQty = min($quantityToBeDelivered, $batchStock - $alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)]);
+									} else {
+										if (!isset($alreadyQtyBatchSetted[$line->fk_product])) {
+											$alreadyQtyBatchSetted[$line->fk_product] = array();
+										}
+
+										if (!isset($alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch])) {
+											$alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch] = array();
+										}
+
+										$deliverableQty = min($quantityToBeDelivered, $batchStock);
+									}
+
+									if ($deliverableQty < 0) $deliverableQty = 0;
+
+									$inputName = 'qtyl'.$indiceAsked.'_'.$subj;
+									if (GETPOSTISSET($inputName)) {
+										$deliverableQty = GETPOST($inputName, 'int');
+									}
+
+									$tooltipClass = $tooltipTitle = '';
+									if (!empty($alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)])) {
+										$tooltipClass = ' classfortooltip';
+										$tooltipTitle = $langs->trans('StockQuantitiesAlreadyAllocatedOnPreviousLines').' : '.$alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)];
+									} else {
+										$alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)] = 0 ;
+									}
+									$alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)] = $deliverableQty + $alreadyQtyBatchSetted[$line->fk_product][$dbatch->batch][intval($warehouse_id)];
+
 									print '<!-- subj='.$subj.'/'.$nbofsuggested.' --><tr '.((($subj + 1) == $nbofsuggested) ? 'oddeven' : '').'>';
 									print '<td colspan="3" ></td><td class="center">';
-									print '<input class="qtyl right" name="qtyl'.$indiceAsked.'_'.$subj.'" id="qtyl'.$indiceAsked.'_'.$subj.'" type="text" size="4" value="'.$deliverableQty.'">';
+									print '<input class="qtyl '.$tooltipClass.' right" title="'.$tooltipTitle.'" name="qtyl'.$indiceAsked.'_'.$subj.'" id="qtyl'.$indiceAsked.'_'.$subj.'" type="text" size="4" value="'.$deliverableQty.'">';
 									print '</td>';
 
 									print '<!-- Show details of lot -->';
@@ -1514,9 +1547,10 @@ if ($action == 'create') {
 											$deliverableQty = 0;
 										}
 
-										$tooltip = '';
+										$tooltipClass = $tooltipTitle = '';
 										if (!empty($alreadyQtySetted[$line->fk_product][intval($warehouse_id)])) {
-											$tooltip = ' class="classfortooltip" title="'.$langs->trans('StockQuantitiesAlreadyAllocatedOnPreviousLines').' : '.$alreadyQtySetted[$line->fk_product][intval($warehouse_id)].'" ';
+											$tooltipClass = ' classfortooltip';
+											$tooltipTitle = $langs->trans('StockQuantitiesAlreadyAllocatedOnPreviousLines').' : '.$alreadyQtySetted[$line->fk_product][intval($warehouse_id)];
 										} else {
 											$alreadyQtySetted[$line->fk_product][intval($warehouse_id)] = 0;
 										}
@@ -1528,7 +1562,7 @@ if ($action == 'create') {
 											$deliverableQty = GETPOSTINT($inputName);
 										}
 
-										print '<input '.$tooltip.' class="qtyl right" name="qtyl'.$indiceAsked.'_'.$subj.'" id="qtyl'.$indiceAsked.'" type="text" size="4" value="'.$deliverableQty.'">';
+										print '<input class="qtyl'.$tooltipClass.' right" title="'.$tooltipTitle.'" name="qtyl'.$indiceAsked.'_'.$subj.'" id="qtyl'.$indiceAsked.'" type="text" size="4" value="'.$deliverableQty.'">';
 										print '<input name="ent1'.$indiceAsked.'_'.$subj.'" type="hidden" value="'.$warehouse_id.'">';
 									} else {
 										if (getDolGlobalString('SHIPMENT_GETS_ALL_ORDER_PRODUCTS')) {

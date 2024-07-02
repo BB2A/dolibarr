@@ -112,9 +112,9 @@ $extrafields->fetch_name_optionals_label($object->table_element_line);
 $extrafields->fetch_name_optionals_label($objectorder->table_element_line);
 
 // Load object. Make an object->fetch
-include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be include, not include_once
+include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be 'include', not 'include_once'
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('receptioncard', 'globalcard'));
 
 $date_delivery = dol_mktime(GETPOSTINT('date_deliveryhour'), GETPOSTINT('date_deliverymin'), 0, GETPOSTINT('date_deliverymonth'), GETPOSTINT('date_deliveryday'), GETPOSTINT('date_deliveryyear'));
@@ -208,7 +208,7 @@ if (empty($reshook)) {
 		$action = '';
 	}
 
-	include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be include, not include_once
+	include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be 'include', not 'include_once'
 
 	// Reopen
 	if ($action == 'reopen' && $permissiontoadd) {
@@ -415,9 +415,9 @@ if (empty($reshook)) {
 					$sellbydate = str_replace('/', '-', $sellby);
 
 					if (getDolGlobalString('STOCK_CALCULATE_ON_RECEPTION') || getDolGlobalString('STOCK_CALCULATE_ON_RECEPTION_CLOSE')) {
-						$ret = $object->addline($entrepot_id, GETPOSTINT($idl), GETPOSTINT($qty), $array_options[$i], GETPOSTINT($comment), strtotime($eatbydate), strtotime($sellbydate), GETPOSTINT($batch), GETPOSTFLOAT($cost_price, 'MU'));
+						$ret = $object->addline($entrepot_id, GETPOSTINT($idl), price2num(GETPOST($qty), 'MS'), $array_options[$i], GETPOST($comment), strtotime($eatbydate), strtotime($sellbydate), GETPOST($batch), GETPOSTFLOAT($cost_price, 'MU'));
 					} else {
-						$ret = $object->addline($entrepot_id, GETPOSTINT($idl), GETPOSTINT($qty), $array_options[$i], GETPOSTINT($comment), strtotime($eatbydate), strtotime($sellbydate), GETPOSTINT($batch));
+						$ret = $object->addline($entrepot_id, GETPOSTINT($idl), price2num(GETPOST($qty), 'MS'), $array_options[$i], GETPOST($comment), strtotime($eatbydate), strtotime($sellbydate), GETPOST($batch));
 					}
 					if ($ret < 0) {
 						setEventMessages($object->error, $object->errors, 'errors');
@@ -508,12 +508,12 @@ if (empty($reshook)) {
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
 		}
-	} elseif ($action == 'settracking_number' || $action == 'settracking_url'
+	} elseif (($action == 'settracking_number' || $action == 'settracking_url'
 	|| $action == 'settrueWeight'
 	|| $action == 'settrueWidth'
 	|| $action == 'settrueHeight'
 	|| $action == 'settrueDepth'
-	|| $action == 'setshipping_method_id') {
+		|| $action == 'setshipping_method_id') && $permissiontoadd) {
 		// Action update
 		$error = 0;
 
@@ -588,7 +588,7 @@ if (empty($reshook)) {
 		} else {
 			setEventMessages($langs->trans("ErrorFailToDeleteFile", GETPOST('urlfile')), null, 'errors');
 		}
-	} elseif ($action == 'classifybilled') {
+	} elseif ($action == 'classifybilled' && $permissiontoadd) {
 		$result = $object->setBilled();
 		if ($result >= 0) {
 			header('Location: '.$_SERVER["PHP_SELF"].'?id='.$object->id);
@@ -746,7 +746,7 @@ if (empty($reshook)) {
 
 $title = $object->ref.' - '.$langs->trans('Reception');
 
-llxHeader('', $title, 'Reception');
+llxHeader('', $title, 'Reception', '', 0, 0, '', '', '', 'mod-reception page-card');
 
 $form = new Form($db);
 $formfile = new FormFile($db);
@@ -1007,7 +1007,7 @@ if ($action == 'create') {
 					$dDLUO = dol_mktime(12, 0, 0, GETPOSTINT('dluo_'.$paramSuffix.'month'), GETPOSTINT('dluo_'.$paramSuffix.'day'), GETPOSTINT('dluo_'.$paramSuffix.'year'));
 					$dDLC = dol_mktime(12, 0, 0, GETPOSTINT('dlc_'.$paramSuffix.'month'), GETPOSTINT('dlc_'.$paramSuffix.'day'), GETPOSTINT('dlc_'.$paramSuffix.'year'));
 					$fk_commandefourndet = 'fk_commandefourndet_'.$paramSuffix;
-					$dispatchLines[$numAsked] = array('paramSuffix' => $paramSuffix, 'prod' => GETPOSTINT($prod), 'qty' => price2num(GETPOST($qty), 'MS'), 'ent' => GETPOSTINT($ent), 'pu' => price2num(GETPOST($pu), 'MU'), 'comment' => GETPOST('comment'), 'fk_commandefourndet' => GETPOSTINT($fk_commandefourndet), 'DLC' => $dDLC, 'DLUO' => $dDLUO, 'lot' => GETPOSTINT($lot));
+					$dispatchLines[$numAsked] = array('paramSuffix' => $paramSuffix, 'prod' => GETPOSTINT($prod), 'qty' => price2num(GETPOST($qty), 'MS'), 'ent' => GETPOSTINT($ent), 'pu' => price2num(GETPOST($pu), 'MU'), 'comment' => GETPOST('comment'), 'fk_commandefourndet' => GETPOSTINT($fk_commandefourndet), 'DLC' => $dDLC, 'DLUO' => $dDLUO, 'lot' => GETPOST($lot));
 				}
 
 				// If create form is coming from same page, it means that post was sent but an error occurred
@@ -1516,7 +1516,7 @@ if ($action == 'create') {
 	print $langs->trans('DateDeliveryPlanned');
 	print '</td>';
 
-	if ($action != 'editdate_livraison') {
+	if ($action != 'editdate_livraison' && $permissiontoadd) {
 		print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editdate_livraison&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->trans('SetDeliveryDate'), 1).'</a></td>';
 	}
 	print '</tr></table>';
@@ -1648,7 +1648,7 @@ if ($action == 'create') {
 	print $langs->trans('ReceptionMethod');
 	print '</td>';
 
-	if ($action != 'editshipping_method_id') {
+	if ($action != 'editshipping_method_id' && $permissiontoadd) {
 		print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editshipping_method_id&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->trans('SetReceptionMethod'), 1).'</a></td>';
 	}
 	print '</tr></table>';

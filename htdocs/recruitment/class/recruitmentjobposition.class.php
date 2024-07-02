@@ -142,8 +142,20 @@ class RecruitmentJobPosition extends CommonObject
 	 * @var string label
 	 */
 	public $label;
+
+	/**
+	 * @var float Quantity
+	 */
 	public $qty;
+
+	/**
+	 * @var int ID thirdparty
+	 */
 	public $fk_soc;
+
+	/**
+	 * @var int ID project
+	 */
 	public $fk_project;
 	public $fk_user_recruiter;
 
@@ -163,7 +175,6 @@ class RecruitmentJobPosition extends CommonObject
 	public $description;
 	public $note_public;
 	public $note_private;
-	public $date_creation;
 	public $fk_user_creat;
 	public $fk_user_modif;
 	public $last_main_doc;

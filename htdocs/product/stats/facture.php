@@ -46,7 +46,7 @@ if (!empty($user->socid)) {
 	$socid = $user->socid;
 }
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('productstatsinvoice'));
 $extrafields = new ExtraFields($db);
 
@@ -152,7 +152,7 @@ if ($id > 0 || !empty($ref)) {
 		$helpurl = 'EN:Module_Services_En|FR:Module_Services|ES:M&oacute;dulo_Servicios';
 	}
 
-	llxHeader('', $title, $helpurl);
+	llxHeader('', $title, $helpurl, '', 0, 0, '', '', '', 'mod-product page-stats_facture');
 
 	if ($result > 0) {
 		$head = product_prepare_head($product);
@@ -281,7 +281,7 @@ if ($id > 0 || !empty($ref)) {
 				// Add $param from extra fields
 				include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_param.tpl.php';
 				// Add $param from hooks
-				$parameters = array();
+				$parameters = array('param' => &$param);
 				$reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 				$option .= $hookmanager->resPrint;
 

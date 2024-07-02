@@ -37,7 +37,6 @@
  *	\brief      Page to show list of third parties
  */
 
-
 // Load Dolibarr environment
 require_once '../main.inc.php';
 include_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
@@ -204,7 +203,7 @@ if ($type == 'f') {
 		$search_type = '4';
 	}
 }
-// Initialize technical objects to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical objects to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $object = new Societe($db);
 $extrafields = new ExtraFields($db);
 $hookmanager->initHooks(array($contextpage));
@@ -1087,7 +1086,7 @@ if ($search_date_modif_end) {
 // Add $param from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_param.tpl.php';
 // Add $param from hooks
-$parameters = array();
+$parameters = array('param' => &$param);
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 

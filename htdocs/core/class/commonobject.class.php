@@ -145,7 +145,7 @@ abstract class CommonObject
 
 	/**
 	 * @var array<string,array<string,string>>	Array to store alternative languages values of object
-	 * Note: call fetchValuesForExtraLanguages() before using this
+	 * 											Note: call fetchValuesForExtraLanguages() before using this
 	 */
 	public $array_languages = null; // Value is array() when load already tried
 
@@ -350,10 +350,10 @@ abstract class CommonObject
 	public $statut;
 
 	/**
-	 * @var int|array<int, string>      The object's status (an int).
-	 *                                  Or an array listing all the potential status of the object:
-	 *                                    array: int of the status => translated label of the status
-	 *                                    See for example the Account class.
+	 * @var int|array<int, string>   The object's status (an int).
+	 *                 						Or an array listing all the potential status of the object:
+	 *                                    	array: int of the status => translated label of the status
+	 *                                    	See for example the Account class.
 	 * @see setStatut()
 	 */
 	public $status;
@@ -584,7 +584,7 @@ abstract class CommonObject
 	 * @deprecated Use $note_private instead.
 	 * @see $note_private
 	 */
-	private $note;
+	public $note;
 
 	/**
 	 * @var float 		Total amount excluding taxes (HT = "Hors Taxe" in French)
@@ -655,17 +655,17 @@ abstract class CommonObject
 
 	// Dates
 	/**
-	 * @var integer|string|null		Object creation date
+	 * @var integer|''|null		Object creation date
 	 */
 	public $date_creation;
 
 	/**
-	 * @var integer|string|null		Object last validation date
+	 * @var integer|''|null		Object last validation date
 	 */
 	public $date_validation;
 
 	/**
-	 * @var integer|string|null		Object last modification date
+	 * @var integer|''|null		Object last modification date
 	 */
 	public $date_modification;
 
@@ -677,14 +677,14 @@ abstract class CommonObject
 	public $tms;
 
 	/**
-	 * @var int|string|null
+	 * @var int|''|null
 	 * @deprecated Use $date_modification instead.
 	 * @see $date_modification
 	 */
 	private $date_update;
 
 	/**
-	 * @var integer|string|null		Object closing date
+	 * @var integer|''|null		Object closing date
 	 */
 	public $date_cloture;
 
@@ -877,7 +877,7 @@ abstract class CommonObject
 		return array(
 			'alreadypaid' => 'totalpaid',
 			'cond_reglement' => 'depr_cond_reglement',
-			'note' => 'note_private',
+			//'note' => 'note_private',		// Some classes needs ->note and others need ->note_public/private so we can't manage deprecation for this field with dolDeprecationHandler
 			'commandeFournisseur' => 'origin_object',
 			'expedition' => 'origin_object',
 			'fk_project' => 'fk_project',
@@ -932,6 +932,16 @@ abstract class CommonObject
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * isEmpty We consider CommonObject isEmpty if this->id is empty
+	 *
+	 * @return bool
+	 */
+	public function isEmpty()
+	{
+		return (empty($this->id));
 	}
 
 	/**
@@ -1145,7 +1155,7 @@ abstract class CommonObject
 			return -1;
 		}
 
-		if (empty($ecmfile->id)) {
+		if (empty($ecmfile->id)) {	// No entry into file index already exists, we should initialize the shared key manually.
 			// Add entry into index
 			if ($initsharekey) {
 				require_once DOL_DOCUMENT_ROOT.'/core/lib/security2.lib.php';
@@ -1170,7 +1180,7 @@ abstract class CommonObject
 			} else {
 				return '';
 			}
-		} elseif (empty($ecmfile->share)) {
+		} elseif (empty($ecmfile->share)) {	// Entry into file index already exists but no share key is defined.
 			// Add entry into index
 			if ($initsharekey) {
 				require_once DOL_DOCUMENT_ROOT.'/core/lib/security2.lib.php';
@@ -1475,7 +1485,7 @@ abstract class CommonObject
 	 *    @param    string      $code       	Filter on this code of contact type ('SHIPPING', 'BILLING', ...)
 	 *    @param	int			$status			Status of user or company
 	 *    @param	int[]		$arrayoftcids	Array with ID of type of contacts. If we provide this, we can make a ec.fk_c_type_contact in ($arrayoftcids) to avoid link on tc table. TODO Not implemented.
-	 *    @return array<int,array{parentId:int,source:string,socid:int,id:int,nom:string,civility:string,lastname:string,firstname:string,email:string,login:string,photo:string,statuscontact:int,rowid:int,code:string,libelle:string,status:string,fk_c_type_contact:int}>|int<-1,-1>        	Array of contacts, -1 if error
+	 *    @return array<int,array{parentId:int,source:string,socid:int,id:int,nom:string,civility:string,lastname:string,firstname:string,email:string,login:string,photo:string,gender:string,statuscontact:int,rowid:int,code:string,libelle:string,status:string,fk_c_type_contact:int}>|int<-1,-1>        	Array of contacts, -1 if error
 	 */
 	public function liste_contact($statusoflink = -1, $source = 'external', $list = 0, $code = '', $status = -1, $arrayoftcids = array())
 	{
@@ -1486,7 +1496,7 @@ abstract class CommonObject
 
 		$sql = "SELECT ec.rowid, ec.statut as statuslink, ec.fk_socpeople as id, ec.fk_c_type_contact"; // This field contains id of llx_socpeople or id of llx_user
 		if ($source == 'internal') {
-			$sql .= ", '-1' as socid, t.statut as statuscontact, t.login, t.photo";
+			$sql .= ", '-1' as socid, t.statut as statuscontact, t.login, t.photo, t.gender";
 		}
 		if ($source == 'external' || $source == 'thirdparty') {
 			$sql .= ", t.fk_soc as socid, t.statut as statuscontact";
@@ -1548,6 +1558,7 @@ abstract class CommonObject
 						'email' => $obj->email,
 						'login' => (empty($obj->login) ? '' : $obj->login),
 						'photo' => (empty($obj->photo) ? '' : $obj->photo),
+						'gender' => (empty($obj->gender) ? '' : $obj->gender),
 						'statuscontact' => $obj->statuscontact,
 						'rowid' => $obj->rowid,
 						'code' => $obj->code,
@@ -3844,6 +3855,10 @@ abstract class CommonObject
 			$fieldup = 'pu_ht';
 		}
 		if ($this->element == 'expensereport') {
+			// Force rounding mode to '0', otherwise when you set MAIN_ROUNDOFTOTAL_NOT_TOTALOFROUND to 1, you may have lines with different totals.
+			// For example, if you have 2 lines with same TTC amounts (6,2 Unit price TTC and VAT rate 20%), on the first line you got 5,17 on HT total
+			// and 5,16 on HT total and 1,04 on VAT total to get 6,20 on TTT total on second line (see #30051).
+			$forcedroundingmode = '0';
 			$fieldup = 'value_unit';
 			$base_price_type = 'TTC';
 		}
@@ -3890,7 +3905,7 @@ abstract class CommonObject
 			while ($i < $num) {
 				$obj = $this->db->fetch_object($resql);
 
-				// Note: There is no check on detail line and no check on total, if $forcedroundingmode = 'none'
+				// Note: There is no check on detail line and no check on total, if $forcedroundingmode = '0'
 				$parameters = array('fk_element' => $obj->rowid);
 				$reshook = $hookmanager->executeHooks('changeRoundingMode', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 
@@ -3951,7 +3966,11 @@ abstract class CommonObject
 				$total_ttc_by_vats[$obj->vatrate] += $obj->total_ttc;
 
 				if ($forcedroundingmode == '1') {	// Check if we need adjustment onto line for vat. TODO This works on the company currency but not on foreign currency
-					$tmpvat = price2num($total_ht_by_vats[$obj->vatrate] * $obj->vatrate / 100, 'MT', 1);
+					if ($base_price_type == 'TTC') {
+						$tmpvat = price2num($total_ttc_by_vats[$obj->vatrate] * $obj->vatrate / (100 + $obj->vatrate), 'MT', 1);
+					} else {
+						$tmpvat = price2num($total_ht_by_vats[$obj->vatrate] * $obj->vatrate / 100, 'MT', 1);
+					}
 					$diff = price2num($total_tva_by_vats[$obj->vatrate] - (float) $tmpvat, 'MT', 1);
 					//print 'Line '.$i.' rowid='.$obj->rowid.' vat_rate='.$obj->vatrate.' total_ht='.$obj->total_ht.' total_tva='.$obj->total_tva.' total_ttc='.$obj->total_ttc.' total_ht_by_vats='.$total_ht_by_vats[$obj->vatrate].' total_tva_by_vats='.$total_tva_by_vats[$obj->vatrate].' (new calculation = '.$tmpvat.') total_ttc_by_vats='.$total_ttc_by_vats[$obj->vatrate].($diff?" => DIFF":"")."<br>\n";
 					if ($diff) {
@@ -3963,8 +3982,13 @@ abstract class CommonObject
 							$error++;
 							break;
 						}
-						$sqlfix = "UPDATE ".$this->db->prefix().$this->table_element_line." SET ".$fieldtva." = ".price2num($obj->total_tva - (float) $diff).", total_ttc = ".price2num($obj->total_ttc - (float) $diff)." WHERE rowid = ".((int) $obj->rowid);
-						dol_syslog('We found a difference of '.$diff.' for line rowid = '.$obj->rowid.". We fix the total_vat and total_ttc of line by running sqlfix = ".$sqlfix);
+						if ($base_price_type == 'TTC') {
+							$sqlfix = "UPDATE ".$this->db->prefix().$this->table_element_line." SET ".$fieldtva." = ".price2num($obj->total_tva - (float) $diff).", total_ht = ".price2num($obj->total_ht + (float) $diff)." WHERE rowid = ".((int) $obj->rowid);
+							dol_syslog('We found a difference of '.$diff.' for line rowid = '.$obj->rowid.". We fix the total_vat and total_ht of line by running sqlfix = ".$sqlfix);
+						} else {
+							$sqlfix = "UPDATE ".$this->db->prefix().$this->table_element_line." SET ".$fieldtva." = ".price2num($obj->total_tva - (float) $diff).", total_ttc = ".price2num($obj->total_ttc - (float) $diff)." WHERE rowid = ".((int) $obj->rowid);
+							dol_syslog('We found a difference of '.$diff.' for line rowid = '.$obj->rowid.". We fix the total_vat and total_ttc of line by running sqlfix = ".$sqlfix);
+						}
 
 						$resqlfix = $this->db->query($sqlfix);
 
@@ -3973,9 +3997,14 @@ abstract class CommonObject
 						}
 
 						$this->total_tva = (float) price2num($this->total_tva - (float) $diff, '', 1);
-						$this->total_ttc = (float) price2num($this->total_ttc - (float) $diff, '', 1);
 						$total_tva_by_vats[$obj->vatrate] = (float) price2num($total_tva_by_vats[$obj->vatrate] - (float) $diff, '', 1);
-						$total_ttc_by_vats[$obj->vatrate] = (float) price2num($total_ttc_by_vats[$obj->vatrate] - (float) $diff, '', 1);
+						if ($base_price_type == 'TTC') {
+							$this->total_ht = (float) price2num($this->total_ht + (float) $diff, '', 1);
+							$total_ht_by_vats[$obj->vatrate] = (float) price2num($total_ht_by_vats[$obj->vatrate] + (float) $diff, '', 1);
+						} else {
+							$this->total_ttc = (float) price2num($this->total_ttc - (float) $diff, '', 1);
+							$total_ttc_by_vats[$obj->vatrate] = (float) price2num($total_ttc_by_vats[$obj->vatrate] - (float) $diff, '', 1);
+						}
 					}
 				}
 
@@ -3990,17 +4019,19 @@ abstract class CommonObject
 			if (!empty($this->situation_cycle_ref) && !empty($this->situation_counter) && $this->situation_counter > 1 && method_exists($this, 'get_prev_sits')) {
 				include_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 				if ($this->type != Facture::TYPE_CREDIT_NOTE) {	// @phpstan-ignore-line
-					$prev_sits = $this->get_prev_sits();
+					if (getDolGlobalInt('INVOICE_USE_SITUATION') != 2) {
+						$prev_sits = $this->get_prev_sits();
 
-					foreach ($prev_sits as $sit) {				// $sit is an object Facture loaded with a fetch.
-						$this->total_ht -= $sit->total_ht;
-						$this->total_tva -= $sit->total_tva;
-						$this->total_localtax1 -= $sit->total_localtax1;
-						$this->total_localtax2 -= $sit->total_localtax2;
-						$this->total_ttc -= $sit->total_ttc;
-						$this->multicurrency_total_ht -= $sit->multicurrency_total_ht;
-						$this->multicurrency_total_tva -= $sit->multicurrency_total_tva;
-						$this->multicurrency_total_ttc -= $sit->multicurrency_total_ttc;
+						foreach ($prev_sits as $sit) {                // $sit is an object Facture loaded with a fetch.
+							$this->total_ht -= $sit->total_ht;
+							$this->total_tva -= $sit->total_tva;
+							$this->total_localtax1 -= $sit->total_localtax1;
+							$this->total_localtax2 -= $sit->total_localtax2;
+							$this->total_ttc -= $sit->total_ttc;
+							$this->multicurrency_total_ht -= $sit->multicurrency_total_ht;
+							$this->multicurrency_total_tva -= $sit->multicurrency_total_tva;
+							$this->multicurrency_total_ttc -= $sit->multicurrency_total_ttc;
+						}
 					}
 				}
 			}
@@ -4776,7 +4807,7 @@ abstract class CommonObject
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$row = $this->db->fetch_row($resql);
-			return $row[0];
+			return (!empty($row[0]) ? $row[0] : 0);
 		}
 
 		return 0;
@@ -4949,7 +4980,7 @@ abstract class CommonObject
 	 * Return into unit=0, the calculated total of weight and volume of all lines * qty
 	 * Calculate by adding weight and volume of each product line, so properties ->volume/volume_units/weight/weight_units must be loaded on line.
 	 *
-	 * @return	array{weight:int|float,volume:int|float,ordered:int|float,toship:int|float}		array('weight'=>...,'volume'=>...)
+	 * @return	array{weight:int|float,volume:int|float,ordered:int|float,toship:int|float}|array{}		array('weight'=>...,'volume'=>...)
 	 */
 	public function getTotalWeightVolume()
 	{
@@ -4959,6 +4990,10 @@ abstract class CommonObject
 		$totalOrdered = '';
 		// defined for shipment only
 		$totalToShip = '';
+
+		if (empty($this->lines)) {
+			return array();
+		}
 
 		foreach ($this->lines as $line) {
 			if (isset($line->qty_asked)) {
@@ -6385,6 +6420,16 @@ abstract class CommonObject
 							}
 						}
 					}
+				} else {
+					/**
+					We are in a situation where the current object has no values in its extra fields.
+					We want to initialize all the values to null so that the array_option is accessible in other contexts (especially in document generation).
+					 **/
+					if (is_array($extrafields->attributes[$this->table_element]['label'])) {
+						foreach ($extrafields->attributes[$this->table_element]['label'] as $key => $val) {
+							$this->array_options['options_' . $key] = null;
+						}
+					}
 				}
 
 				// If field is a computed field, value must become result of compute (regardless of whether a row exists
@@ -6497,7 +6542,7 @@ abstract class CommonObject
 			foreach ($new_array_options as $key => $value) {
 				$attributeKey      = substr($key, 8); // Remove 'options_' prefix
 				$attributeType     = $extrafields->attributes[$this->table_element]['type'][$attributeKey];
-				$attributeLabel    = $extrafields->attributes[$this->table_element]['label'][$attributeKey];
+				$attributeLabel    = $langs->transnoentities($extrafields->attributes[$this->table_element]['label'][$attributeKey]);
 				$attributeParam    = $extrafields->attributes[$this->table_element]['param'][$attributeKey];
 				$attributeRequired = $extrafields->attributes[$this->table_element]['required'][$attributeKey];
 				$attributeUnique   = $extrafields->attributes[$this->table_element]['unique'][$attributeKey];
@@ -6847,7 +6892,7 @@ abstract class CommonObject
 			$this->db->begin();
 
 			$table_element = $this->table_element;
-			if ($table_element == 'categorie') {
+			if ($table_element == 'categorie') {	// TODO Rename table llx_categories_extrafields into llx_categorie_extrafields so we can remove this.
 				$table_element = 'categories'; // For compatibility
 			}
 
@@ -6909,7 +6954,7 @@ abstract class CommonObject
 	 */
 	public function updateExtraField($key, $trigger = null, $userused = null)
 	{
-		global $conf, $langs, $user;
+		global $conf, $langs, $user, $hookmanager;
 
 		if (getDolGlobalString('MAIN_EXTRAFIELDS_DISABLED')) {
 			return 0;
@@ -7140,7 +7185,12 @@ abstract class CommonObject
 			$linealreadyfound = 0;
 
 			// Check if there is already a line for this object (in most cases, it is, but sometimes it is not, for example when extra field has been created after), so we must keep this overload)
-			$sql = "SELECT COUNT(rowid) as nb FROM ".$this->db->prefix().$this->table_element."_extrafields WHERE fk_object = ".((int) $this->id);
+			$table_element = $this->table_element;
+			if ($table_element == 'categorie') {	// TODO Rename table llx_categories_extrafields into llx_categorie_extrafields so we can remove this.
+				$table_element = 'categories'; // For compatibility
+			}
+
+			$sql = "SELECT COUNT(rowid) as nb FROM ".$this->db->prefix().$table_element."_extrafields WHERE fk_object = ".((int) $this->id);
 			$resql = $this->db->query($sql);
 			if ($resql) {
 				$tmpobj = $this->db->fetch_object($resql);
@@ -7170,6 +7220,15 @@ abstract class CommonObject
 				}
 			}
 
+			if (!$error) {
+				$parameters = array('key' => $key);
+				global $action;
+				$reshook = $hookmanager->executeHooks('updateExtraFieldBeforeCommit', $parameters, $this, $action);
+				if ($reshook < 0) {
+					setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
+				}
+			}
+
 			if (!$error && $trigger) {
 				// Call trigger
 				$this->context = array('extrafieldupdate' => 1);
@@ -7191,6 +7250,29 @@ abstract class CommonObject
 		} else {
 			return 0;
 		}
+	}
+
+	/**
+	 * Convenience method for retrieving the value of an extrafield without actually fetching it from the database.
+	 *
+	 * @param string $key Name of the extrafield
+	 * @return mixed|null
+	 */
+	public function getExtraField($key)
+	{
+		return $this->array_options['options_'.$key] ?? null;
+	}
+
+	/**
+	 * Convenience method for setting the value of an extrafield without actually updating it in the database.
+	 *
+	 * @param string $key   Name of the extrafield
+	 * @param mixed  $value Value to be assigned to the extrafield
+	 * @return void
+	 */
+	public function setExtraField($key, $value)
+	{
+		$this->array_options['options_'.$key] = $value;
 	}
 
 	/**
@@ -7230,8 +7312,8 @@ abstract class CommonObject
 	 * @param  string  		$key           Key of attribute
 	 * @param  string|string[]	$value         Preselected value to show (for date type it must be in timestamp format, for amount or price it must be a php numeric value, for array type must be array)
 	 * @param  string  		$moreparam     To add more parameters on html input tag
-	 * @param  string  		$keysuffix     Prefix string to add into name and id of field (can be used to avoid duplicate names)
-	 * @param  string  		$keyprefix     Suffix string to add into name and id of field (can be used to avoid duplicate names)
+	 * @param  string  		$keysuffix     Suffix string to add into name and id of field (can be used to avoid duplicate names)
+	 * @param  string  		$keyprefix     Prefix string to add into name and id of field (can be used to avoid duplicate names)
 	 * @param  string|int	$morecss       Value for css to define style/length of field. May also be a numeric.
 	 * @param  int<0,1>		$nonewbutton   Force to not show the new button on field that are links to object
 	 * @return string
@@ -7309,15 +7391,6 @@ abstract class CommonObject
 			// Special case that prevent to force $type to have multiple input
 			if (empty($this->fields[$key]['multiinput'])) {
 				$type = (($this->fields[$key]['type'] == 'checkbox') ? $this->fields[$key]['type'] : 'select');
-			} else {
-				$valuearray = explode(",", $value);
-				foreach ($valuearray as $keytmp => $valuetmp) {
-					if (!empty($this->fields[$key]['arrayofkeyval'][$valuetmp])) {
-						$valuemultiselectinput[] = $valuetmp;
-						unset($valuearray[$keytmp]);
-					}
-				}
-				$value = implode(',', $valuearray);
 			}
 		}
 
@@ -7419,8 +7492,51 @@ abstract class CommonObject
 		} elseif (preg_match('/^text/', (string) $type)) {
 			if (!preg_match('/search_/', $keyprefix)) {		// If keyprefix is search_ or search_options_, we must just use a simple text field
 				if (!empty($param['options'])) {
-					$out .= "<br>";
-					$out .= $form->multiselectarray($keyprefix.$key.$keysuffix."_multiselect", $param['options'], (GETPOSTISSET($keyprefix.$key.$keysuffix."_multiselect") ? GETPOST($keyprefix.$key.$keysuffix."_multiselect") : $valuemultiselectinput), 0, 0, "flat maxwidthonphone".$morecss, 0, '90%', '', '', '', ((!empty($conf->use_javascript_ajax) && !getDolGlobalString('MAIN_EXTRAFIELDS_DISABLE_SELECT2')) ? 1 : -1));
+					// If the textarea field has a list of arrayofkeyval into its definition, we suggest a combo with possible values to fill the textarea.
+					//var_dump($param['options']);
+					$out .= $form->selectarray($keyprefix.$key.$keysuffix."_multiinput", $param['options'], '', 1, 0, 0, "flat maxwidthonphone".$morecss);
+					$out .= "<script>";
+					$out .= '
+					function handlemultiinputdisabling(htmlname){
+						console.log("We handle the disabling of used options for "+htmlname+"_multiinput");
+						multiinput = $("#"+htmlname+"_multiinput");
+						multiinput.find("option").each(function(){
+							tmpval = $("#"+htmlname).val();
+							tmpvalarray = tmpval.split(",");
+							valtotest = $(this).val();
+							if(tmpvalarray.includes(valtotest)){
+								$(this).prop("disabled",true);
+							} else {
+								if($(this).prop("disabled") == true){
+									console.log(valtotest)
+									$(this).prop("disabled", false);
+								}
+							}
+						});
+					}
+
+					$(document).ready(function () {
+						$("#'.$keyprefix.$key.$keysuffix.'_multiinput").on("change",function() {
+							console.log("We add the selected value to the text area '.$keyprefix.$key.$keysuffix.'");
+							tmpval = $("#'.$keyprefix.$key.$keysuffix.'").val();
+							tmpvalarray = tmpval.split(",");
+							valtotest = $(this).val();
+							if(valtotest != -1 && !tmpvalarray.includes(valtotest)){
+								if(tmpval == ""){
+									tmpval = valtotest;
+								} else {
+									tmpval = tmpval + "," + valtotest;
+								}
+								$("#'.$keyprefix.$key.$keysuffix.'").val(tmpval);
+								handlemultiinputdisabling("'.$keyprefix.$key.$keysuffix.'");
+							}
+						});
+						$("#'.$keyprefix.$key.$keysuffix.'").on("change",function(){
+							handlemultiinputdisabling($(this).attr("id"));
+						});
+						handlemultiinputdisabling("'.$keyprefix.$key.$keysuffix.'");
+					})';
+					$out .= "</script>";
 				}
 				require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
 				$doleditor = new DolEditor($keyprefix.$key.$keysuffix, $value, '', 200, 'dolibarr_notes', 'In', false, false, false, ROWS_5, '90%');
@@ -7431,7 +7547,7 @@ abstract class CommonObject
 		} elseif (preg_match('/^html/', (string) $type)) {
 			if (!preg_match('/search_/', $keyprefix)) {		// If keyprefix is search_ or search_options_, we must just use a simple text field
 				require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
-				$doleditor = new DolEditor($keyprefix.$key.$keysuffix, $value, '', 200, 'dolibarr_notes', 'In', false, false, isModEnabled('fckeditor') && $conf->global->FCKEDITOR_ENABLE_SOCIETE, ROWS_5, '90%');
+				$doleditor = new DolEditor($keyprefix.$key.$keysuffix, $value, '', 200, 'dolibarr_notes', 'In', false, false, isModEnabled('fckeditor') && getDolGlobalInt('FCKEDITOR_ENABLE_SOCIETE'), ROWS_5, '90%');
 				$out = (string) $doleditor->Create(1, '', true, '', '', $moreparam, $morecss);
 			} else {
 				$out = '<input type="text" class="flat '.$morecss.' maxwidthonsmartphone" name="'.$keyprefix.$key.$keysuffix.'" id="'.$keyprefix.$key.$keysuffix.'" value="'.dol_escape_htmltag($value).'" '.($moreparam ? $moreparam : '').'>';
@@ -7455,7 +7571,7 @@ abstract class CommonObject
 			}
 			$out = '<input type="text" class="flat '.$morecss.' maxwidthonsmartphone" name="'.$keyprefix.$key.$keysuffix.'" id="'.$keyprefix.$key.$keysuffix.'" value="'.$value.'" '.($moreparam ? $moreparam : '').'> ';
 		} elseif ($type == 'select') {	// combo list
-			$out = '';  // @phan-suppress-current-line PhanPluginRedundantAssignment
+			$out = '';
 			if (!empty($conf->use_javascript_ajax) && !getDolGlobalString('MAIN_EXTRAFIELDS_DISABLE_SELECT2')) {
 				include_once DOL_DOCUMENT_ROOT.'/core/lib/ajax.lib.php';
 				$out .= ajax_combobox($keyprefix.$key.$keysuffix, array(), 0);
@@ -7487,7 +7603,7 @@ abstract class CommonObject
 			$out .= $tmpselect;
 			$out .= '</select>';
 		} elseif ($type == 'sellist') {
-			$out = '';  // @phan-suppress-current-line PhanPluginRedundantAssignment
+			$out = '';
 			if (!empty($conf->use_javascript_ajax) && !getDolGlobalString('MAIN_EXTRAFIELDS_DISABLE_SELECT2')) {
 				include_once DOL_DOCUMENT_ROOT.'/core/lib/ajax.lib.php';
 				$out .= ajax_combobox($keyprefix.$key.$keysuffix, array(), 0);
@@ -7681,7 +7797,7 @@ abstract class CommonObject
 			$value_arr = explode(',', $value);
 			$out = $form->multiselectarray($keyprefix.$key.$keysuffix, (empty($param['options']) ? null : $param['options']), $value_arr, 0, 0, $morecss, 0, '100%');
 		} elseif ($type == 'radio') {
-			$out = '';  // @phan-suppress-current-line PhanPluginRedundantAssignment
+			$out = '';
 			foreach ($param['options'] as $keyopt => $valopt) {
 				$out .= '<input class="flat '.$morecss.'" type="radio" name="'.$keyprefix.$key.$keysuffix.'" id="'.$keyprefix.$key.$keysuffix.'" '.($moreparam ? $moreparam : '');
 				$out .= ' value="'.$keyopt.'"';
@@ -7902,7 +8018,7 @@ abstract class CommonObject
 			$newval = $val;
 			$newval['type'] = 'varchar(256)';
 
-			$out = '';  // @phan-suppress-current-line PhanPluginRedundantAssignment
+			$out = '';
 			if (!empty($value)) {
 				foreach ($value as $option) {
 					$out .= '<span><a class="'.dol_escape_htmltag($keyprefix.$key.$keysuffix).'_del" href="javascript:;"><span class="fa fa-minus-circle valignmiddle"></span></a> ';
@@ -8465,7 +8581,7 @@ abstract class CommonObject
 
 		$this->clearFieldError($fieldKey);
 
-		if (!isset($fields[$fieldKey]) || $fields[$fieldKey] === null) {
+		if (!isset($fields[$fieldKey])) {
 			$this->setFieldError($fieldKey, $langs->trans('FieldNotFoundInObject'));
 			return false;
 		}
@@ -8641,7 +8757,14 @@ abstract class CommonObject
 			$classname = $InfoFieldList[0];
 			$classpath = $InfoFieldList[1];
 			if (!$validate->isFetchable($fieldValue, $classname, $classpath)) {
-				$this->setFieldError($fieldKey, $validate->error);
+				$lastIsFetchableError = $validate->error;
+
+				// from V19 of Dolibarr, In some cases link use element instead of class, example project_task
+				if ($validate->isFetchableElement($fieldValue, $classname)) {
+					return true;
+				}
+
+				$this->setFieldError($fieldKey, $lastIsFetchableError);
 				return false;
 			} else {
 				return true;
@@ -8779,6 +8902,8 @@ abstract class CommonObject
 								} else {
 									$value = $getposttemp;
 								}
+							} elseif (in_array($extrafields->attributes[$this->table_element]['type'][$key], array('int'))) {
+								$value =( !empty($this->array_options["options_".$key]) || $this->array_options["options_".$key] === '0' ) ? $this->array_options["options_".$key] : '';
 							} else {
 								$value = (!empty($this->array_options["options_".$key]) ? $this->array_options["options_".$key] : ''); // No GET, no POST, no default value, so we take value of object.
 							}
@@ -8882,13 +9007,15 @@ abstract class CommonObject
 
 						$labeltoshow = $langs->trans($label);
 						$helptoshow = $langs->trans($extrafields->attributes[$this->table_element]['help'][$key]);
-
 						if ($display_type == 'card') {
 							$out .= '<tr '.($html_id ? 'id="'.$html_id.'" ' : '').$csstyle.' class="field_options_'.$key.' '.$class.$this->element.'_extras_'.$key.' trextrafields_collapse'.$collapse_group.'" '.$domData.' >';
 							if (getDolGlobalString('MAIN_VIEW_LINE_NUMBER') && ($action == 'view' || $action == 'valid' || $action == 'editline' || $action == 'confirm_valid' || $action == 'confirm_cancel')) {
 								$out .= '<td></td>';
 							}
 							$out .= '<td class="'.(empty($params['tdclass']) ? 'titlefieldcreate' : $params['tdclass']).' wordbreak';
+							if ($extrafields->attributes[$this->table_element]['type'][$key] == 'text') {
+								$out .= ' tdtop';
+							}
 						} elseif ($display_type == 'line') {
 							$out .= '<div '.($html_id ? 'id="'.$html_id.'" ' : '').$csstyle.' class="fieldline_options_'.$key.' '.$class.$this->element.'_extras_'.$key.' trextrafields_collapse'.$collapse_group.'" '.$domData.' >';
 							$out .= '<div style="display: inline-block; padding-right:4px" class="wordbreak';
@@ -8922,10 +9049,13 @@ abstract class CommonObject
 
 						$out .= ($display_type == 'card' ? '</td>' : '</div>');
 
+						// Second column
 						$html_id = !empty($this->id) ? $this->element.'_extras_'.$key.'_'.$this->id : '';
 						if ($display_type == 'card') {
 							// a first td column was already output (and may be another on before if MAIN_VIEW_LINE_NUMBER set), so this td is the next one
-							$out .= '<td '.($html_id ? 'id="'.$html_id.'" ' : '').' class="valuefieldcreate '.$this->element.'_extras_'.$key.'" '.($colspan ? ' colspan="'.$colspan.'"' : '').'>';
+							$out .= '<td '.($html_id ? 'id="'.$html_id.'" ' : '').' class="valuefieldcreate '.$this->element.'_extras_'.$key;
+							$out .= '" '.($colspan ? ' colspan="'.$colspan.'"' : '');
+							$out .= '>';
 						} elseif ($display_type == 'line') {
 							$out .= '<div '.($html_id ? 'id="'.$html_id.'" ' : '').' style="display: inline-block" class="valuefieldcreate '.$this->element.'_extras_'.$key.' extra_inline_'.$extrafields->attributes[$this->table_element]['type'][$key].'">';
 						}
@@ -8935,15 +9065,24 @@ abstract class CommonObject
 								$out .= $extrafields->showOutputField($key, $value, '', $this->table_element);
 								break;
 							case "create":
+								$listoftypestoshowpicto = explode(',', getDolGlobalString('MAIN_TYPES_TO_SHOW_PICOT', 'email,phone,ip,password'));
+								if (in_array($extrafields->attributes[$this->table_element]['type'][$key], $listoftypestoshowpicto)) {
+									$out .= getPictoForType($extrafields->attributes[$this->table_element]['type'][$key], ($extrafields->attributes[$this->table_element]['type'][$key] == 'text' ? 'tdtop' : ''));
+								}
+								//$out .= '<!-- type = '.$extrafields->attributes[$this->table_element]['type'][$key].' -->';
 								$out .= $extrafields->showInputField($key, $value, '', $keysuffix, '', 0, $this->id, $this->table_element);
 								break;
 							case "edit":
+								$listoftypestoshowpicto = explode(',', getDolGlobalString('MAIN_TYPES_TO_SHOW_PICOT', 'email,phone,ip,password'));
+								if (in_array($extrafields->attributes[$this->table_element]['type'][$key], $listoftypestoshowpicto)) {
+									$out .= getPictoForType($extrafields->attributes[$this->table_element]['type'][$key], ($extrafields->attributes[$this->table_element]['type'][$key] == 'text' ? 'tdtop' : ''));
+								}
 								$out .= $extrafields->showInputField($key, $value, '', $keysuffix, '', 0, $this->id, $this->table_element);
 								break;
 						}
 
 						$out .= ($display_type == 'card' ? '</td>' : '</div>');
-						$out .= ($display_type == 'card' ? '</tr>' : '</div>');
+						$out .= ($display_type == 'card' ? '</tr>'."\n" : '</div>');
 						$e++;
 					}
 				}
@@ -9190,44 +9329,18 @@ abstract class CommonObject
 	}
 
 	/**
-	 * getDataToShowPhoto
+	 * Function used to get the logos or photos of an object
 	 *
 	 * @param 	string	$modulepart		Module part
-	 * @param 	string	$imagesize		Image size
+	 * @param 	string	$imagesize		Image size ('', 'mini' or 'small')
 	 * @return	array{dir:string,file:string,originalfile:string,altfile:string,email:string,capture:string}	Array of data to show photo
 	 */
 	public function getDataToShowPhoto($modulepart, $imagesize)
 	{
-		global $conf;
-
-		$file = '';
-		$originalfile = '';
-		$newmodulepart = $modulepart;
-		if ($modulepart == 'unknown' && !empty($this->module)) {
-			$newmodulepart = $this->module;
-		}
-
-		$id = $this->id;
-		$dir = $conf->$newmodulepart->dir_output ?? '';
-		if (!empty($this->photo)) {
-			if (dolIsAllowedForPreview($this->photo)) {
-				if ((string) $imagesize == 'mini') {
-					$file = get_exdir(0, 0, 0, 0, $this, $newmodulepart) . 'photos/' . dol_sanitizeFileName(getImageFileNameForSize($this->photo, '_mini'));
-				} elseif ((string) $imagesize == 'small') {
-					$file = get_exdir(0, 0, 0, 0, $this, $newmodulepart) . 'photos/' . dol_sanitizeFileName(getImageFileNameForSize($this->photo, '_small'));
-				} else {
-					$file = get_exdir(0, 0, 0, 0, $this, $newmodulepart) . 'photos/' . dol_sanitizeFileName($this->photo);
-				}
-				$originalfile = get_exdir(0, 0, 0, 0, $this, $newmodulepart) . 'photos/' . dol_sanitizeFileName($this->photo);
-			}
-		}
-
-		$altfile = '';
-		$email = empty($this->email) ? '' : $this->email;
-		$capture = '';
-
-		return array('dir' => $dir, 'file' => $file, 'originalfile' => $originalfile, 'altfile' => $altfile, 'email' => $email, 'capture' => $capture);
+		// See getDataToShowPhoto() implemented by Product for example.
+		return array('dir' => '', 'file' => '', 'originalfile' => '', 'altfile' => '', 'email' => '', 'capture' => '');
 	}
+
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
@@ -9401,8 +9514,8 @@ abstract class CommonObject
 						}
 						if ($showaction) {
 							$return .= '<br>';
-							// If $photo_vignette set, we add link to generate thumbs if file is an image and ->imgWidth or->imgHeight higher than limits
-							if ($photo_vignette && (image_format_supported($photo) > 0) && ((isset($this->imgWidth) && $this->imgWidth > $maxWidth) || (isset($this->imgHeight) && $this->imgHeight > $maxHeight))) {
+							// If $photo_vignette set, we add a link to generate thumbs if file is an image and width or height higher than limits
+							if ($photo_vignette && (image_format_supported($photo) > 0) && ((isset($imgarray['width']) && $imgarray['width'] > $maxWidth) || (isset($imgarray['width']) && $imgarray['width'] > $maxHeight))) {
 								$return .= '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&action=addthumb&token='.newToken().'&file='.urlencode($pdir.$viewfilename).'">'.img_picto($langs->trans('GenerateThumb'), 'refresh').'&nbsp;&nbsp;</a>';
 							}
 							// Special case for product
@@ -9730,7 +9843,7 @@ abstract class CommonObject
 						if (empty($obj->$field)) {
 							$this->$field = null;
 						} else {
-							$this->$field = (float) $obj->$field;
+							$this->$field = (int) $obj->$field;
 						}
 					} else {
 						if (isset($obj->$field) && (!is_null($obj->$field) || (array_key_exists('notnull', $info) && $info['notnull'] == 1))) {

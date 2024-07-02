@@ -18,7 +18,7 @@
 
 /**
  *	\file       htdocs/core/boxes/box_graph_invoices_peryear.php
- *	\ingroup    factures
+ *	\ingroup    invoices
  *	\brief      Box to show graph of invoices per year
  */
 include_once DOL_DOCUMENT_ROOT.'/core/boxes/modules_boxes.php';
@@ -125,6 +125,7 @@ class box_graph_invoices_peryear extends ModeleBoxes
 			$HEIGHT = '192';
 
 			$stats = new FactureStats($this->db, $socid, $mode, 0);
+			$stats->where = "f.fk_statut > 0";
 
 			// Build graphic amount of object. $data = array(array('Lib',val1,val2,val3),...)
 			$data2 = $stats->getAmountByYear($numberyears);

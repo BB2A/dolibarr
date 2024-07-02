@@ -249,10 +249,10 @@ class pdf_standard extends ModelePDFEvaluation
 
 				// Show notes
 				if (!empty($object->note_public)) {
-					$tab_top = 65;  // @phan-suppress-current-line PhanPluginRedundantAssignment
+					$tab_top = 65;
 
 					$pdf->SetFont('', 'B', $default_font_size);
-					$pdf->MultiCell(190, 4, $outputlangs->transnoentities("Notes") . ":", 0, 'L', 0, '', 12, $tab_top);
+					$pdf->MultiCell(190, 4, $outputlangs->transnoentities("Notes") . ":", 0, 'L', 0, 0, 12, $tab_top);
 					$tab_top += 4;
 					$pdf->SetFont('', '', $default_font_size - 1);
 					$pdf->writeHTMLCell(190, 3, $this->posxnotes + 1, $tab_top + 1, dol_htmlentitiesbr($object->note_public), 0, 1);

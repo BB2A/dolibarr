@@ -201,8 +201,10 @@ abstract class DoliDB implements Database
 				$this->transaction_opened++;
 				dol_syslog("BEGIN Transaction".($textinlog ? ' '.$textinlog : ''), LOG_DEBUG);
 				dol_syslog('', 0, 1);
+				return 1;
+			} else {
+				return 0;
 			}
-			return (int) $ret;
 		} else {
 			$this->transaction_opened++;
 			dol_syslog('', 0, 1);
@@ -419,8 +421,8 @@ abstract class DoliDB implements Database
 	 */
 	public function getRows($sql)
 	{
-		if (! preg_match('/LIMIT \d+$/', $sql)) {
-			return false;
+		if (!preg_match('/LIMIT \d+$/', $sql)) {
+			trigger_error(__CLASS__ .'::'.__FUNCTION__.'() query must have a LIMIT clause', E_USER_ERROR);
 		}
 
 		$resql = $this->query($sql);

@@ -178,6 +178,8 @@ if ($action == 'confirm_delete') {
 			$callbacktodel .= '/core/modules/oauth/stripetest_oauthcallback.php?action=delete&keyforprovider='.$provider.'&token='.newToken().'&backtourl='.urlencode($backtourl);
 		} elseif ($label == 'OAUTH_MICROSOFT') {
 			$callbacktodel .= '/core/modules/oauth/microsoft_oauthcallback.php?action=delete&keyforprovider='.$provider.'&token='.newToken().'&backtourl='.urlencode($backtourl);
+		} elseif ($label == 'OAUTH_MICROSOFT2') {
+			$callbacktodel .= '/core/modules/oauth/microsoft2_oauthcallback.php?action=delete&keyforprovider='.$provider.'&token='.newToken().'&backtourl='.urlencode($backtourl);
 		} elseif ($label == 'OAUTH_OTHER') {
 			$callbacktodel .= '/core/modules/oauth/generic_oauthcallback.php?action=delete&keyforprovider='.$provider.'&token='.newToken().'&backtourl='.urlencode($backtourl);
 		}
@@ -211,7 +213,7 @@ $form = new Form($db);
 $title = $langs->trans('ConfigOAuth');
 $help_url = 'EN:Module_OAuth|FR:Module_OAuth_FR|ES:Módulo_OAuth_ES';
 
-llxHeader('', $title, $help_url);
+llxHeader('', $title, $help_url, '', 0, 0, '', '', '', 'mod-admin page-oauth');
 
 // Confirmation of action process
 if ($action == 'delete') {

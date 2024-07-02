@@ -409,7 +409,7 @@ class modMyModule extends DolibarrModules
 		//$this->export_help_array[$r] = array('t.field'=>'FieldDescHelp');
 		$this->export_sql_start[$r]='SELECT DISTINCT ';
 		$this->export_sql_end[$r]  =' FROM '.MAIN_DB_PREFIX.'mymodule_myobject as t';
-		//$this->export_sql_end[$r]  =' LEFT JOIN '.MAIN_DB_PREFIX.'mymodule_myobject_line as tl ON tl.fk_myobject = t.rowid';
+		//$this->export_sql_end[$r]  .=' LEFT JOIN '.MAIN_DB_PREFIX.'mymodule_myobject_line as tl ON tl.fk_myobject = t.rowid';
 		$this->export_sql_end[$r] .=' WHERE 1 = 1';
 		$this->export_sql_end[$r] .=' AND t.entity IN ('.getEntity('myobject').')';
 		$r++; */
@@ -439,7 +439,7 @@ class modMyModule extends DolibarrModules
 			't.ref' => array(
 				'rule'=>'getrefifauto',
 				'class'=>(!getDolGlobalString('MYMODULE_MYOBJECT_ADDON') ? 'mod_myobject_standard' : getDolGlobalString('MYMODULE_MYOBJECT_ADDON')),
-				'path'=>"/core/modules/commande/".(!getDolGlobalString('MYMODULE_MYOBJECT_ADDON') ? 'mod_myobject_standard' : getDolGlobalString('MYMODULE_MYOBJECT_ADDON')).'.php'
+				'path'=>"/core/modules/mymodule/".(!getDolGlobalString('MYMODULE_MYOBJECT_ADDON') ? 'mod_myobject_standard' : getDolGlobalString('MYMODULE_MYOBJECT_ADDON')).'.php',
 				'classobject'=>'MyObject',
 				'pathobject'=>'/mymodule/class/myobject.class.php',
 			),
