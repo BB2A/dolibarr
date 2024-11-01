@@ -395,13 +395,9 @@ if ($rowid && $action != 'edit') {
 	$somethingshown = $formfile->numoffiles;
 	*/
 	// Show links to link elements
-	//$linktoelem = $form->showLinkToObjectBlock($object, null, array('subscription'));
+	//$tmparray = $form->showLinkToObjectBlock($object, null, array('subscription'), 1);
 	$somethingshown = $form->showLinkedObjectBlock($object, '');
 
-	// Show links to link elements
-	/*$linktoelem = $form->showLinkToObjectBlock($object,array('order'));
-	if ($linktoelem) print ($somethingshown?'':'<br>').$linktoelem;
-	*/
 
 	print '</div><div class="fichehalfright">';
 
@@ -409,7 +405,7 @@ if ($rowid && $action != 'edit') {
 	/*
 	include_once DOL_DOCUMENT_ROOT . '/core/class/html.formactions.class.php';
 	$formactions = new FormActions($db);
-	$somethingshown = $formactions->showactions($object, $object->element, $socid, 1);
+	$somethingshown = $formactions->showactions($object, $object->element, $socid, 1, '', $MAXEVENT);
 	*/
 
 	print '</div></div>';
