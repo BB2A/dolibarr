@@ -129,13 +129,11 @@ class ProductCombination
 	/**
 	 * Retrieves a ProductCombination by its rowid
 	 *
-	 * @param   int     $rowid      ID of the ProductCombination
-	 * @return  -1|1                -1 if KO, 1 if OK
+	 * @param   int     	$rowid      ID of the ProductCombination
+	 * @return  int<-1,1>               -1 if KO, 1 if OK
 	 */
 	public function fetch($rowid)
 	{
-		global $conf;
-
 		$sql = "SELECT rowid, fk_product_parent, fk_product_child, variation_price, variation_price_percentage, variation_weight, variation_ref_ext FROM ".MAIN_DB_PREFIX."product_attribute_combination WHERE rowid = ".((int) $rowid)." AND entity IN (".getEntity('product').")";
 
 		$query = $this->db->query($sql);
@@ -169,14 +167,12 @@ class ProductCombination
 	/**
 	 * Retrieves combination price levels
 	 *
-	 * @param 	int 	$fk_price_level The price level to fetch, use 0 for all
-	 * @param 	bool 	$useCache 		To use cache or not
-	 * @return 	-1|1 					-1 if KO, 1 if OK
+	 * @param 	int 		$fk_price_level 	The price level to fetch, use 0 for all
+	 * @param 	bool 		$useCache 			To use cache or not
+	 * @return 	int<-1,1> 						-1 if KO, 1 if OK
 	 */
 	public function fetchCombinationPriceLevels($fk_price_level = 0, $useCache = true)
 	{
-		global $conf;
-
 		// Check cache
 		if (!empty($this->combination_price_levels) && $useCache) {
 			if ((!empty($fk_price_level) && isset($this->combination_price_levels[$fk_price_level])) || empty($fk_price_level)) {

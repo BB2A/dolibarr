@@ -158,10 +158,10 @@ if (!defined('NOREQUIREDB')) {
 				print "SorryWebsiteIsCurrentlyOffLine";
 			}
 			print '</div>';
-			exit;
+			exit(1);
 		}
 		dol_print_error($db, "host=".$conf->db->host.", port=".$conf->db->port.", user=".$conf->db->user.", databasename=".$conf->db->name.", ".$db->error);
-		exit;
+		exit(1);
 	}
 }
 
@@ -264,10 +264,4 @@ if (!defined('NOREQUIRETRAN')) {
 		$langcode = constant('MAIN_LANG_DEFAULT');
 	}
 	$langs->setDefaultLang($langcode);
-}
-
-
-
-if (!defined('MAIN_LABEL_MENTION_NPR')) {
-	define('MAIN_LABEL_MENTION_NPR', 'NPR');
 }

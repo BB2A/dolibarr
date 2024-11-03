@@ -1,11 +1,11 @@
 <?php
-/* Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
- * Copyright (C) 2005-2010 Regis Houssin        <regis.houssin@capnetworks.com>
- * Copyright (C) 2016      Ferran Marcet        <fmarcet@2byte.es>
- * Copyright (C) 2023      Alexandre Spangaro   <aspangaro@open-dsi.fr>
+/* Copyright (C) 2001-2005	Rodolphe Quiedeville		<rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2015	Laurent Destailleur			<eldy@users.sourceforge.net>
+ * Copyright (C) 2005-2010	Regis Houssin				<regis.houssin@capnetworks.com>
+ * Copyright (C) 2016		Ferran Marcet				<fmarcet@2byte.es>
+ * Copyright (C) 2023-2024	Alexandre Spangaro			<alexandre@inovea-conseil.com>
  * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
- * Copyright (C) 2024		Benjamin Falière	<benjamin.faliere@altairis.fr>
+ * Copyright (C) 2024		Benjamin Falière			<benjamin.faliere@altairis.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ $search_array_options = $extrafields->getOptionalsFromPost($object->table_elemen
 // List of fields to search into when doing a "search in all"
 $fieldstosearchall = array(
 	'e.ref' => "Ref",
-	'e.ref_supplier'=>"RefSupplier",
+	'e.ref_supplier' => "RefSupplier",
 	's.nom' => "ThirdParty",
 	'e.note_public' => 'NotePublic',
 );
@@ -226,6 +226,7 @@ if (empty($reshook)) {
 
 		$TFact = array();
 		$TFactThird = array();
+		'@phan-var FactureFournisseur[] $TFactThird';
 		$TFactThirdNbLines = array();
 
 		$nb_bills_created = 0;
@@ -304,7 +305,8 @@ if (empty($reshook)) {
 						}
 					}
 
-					// try get from third-party of reception
+					$soc = null;
+					// try get from third party of reception
 					if (!empty($rcp->thirdparty)) {
 						$soc = $rcp->thirdparty;
 						if (empty($cond_reglement_id) && !empty($soc->cond_reglement_supplier_id)) {
@@ -331,7 +333,9 @@ if (empty($reshook)) {
 				$objecttmp->transport_mode_id = $transport_mode_id;
 
 				// if the VAT reverse-charge is activated by default in supplier card to resume the information
-				$objecttmp->vat_reverse_charge = $soc->vat_reverse_charge;
+				if (is_object($soc)) {
+					$objecttmp->vat_reverse_charge = $soc->vat_reverse_charge;
+				}
 
 				$objecttmp->fk_project			= $rcp->fk_project;
 				//$objecttmp->multicurrency_code = $rcp->multicurrency_code;
@@ -548,7 +552,7 @@ if (empty($reshook)) {
 				// Fac builddoc
 				$donotredirect = 1;
 				$upload_dir = $conf->fournisseur->facture->dir_output;
-				$permissiontoadd = ($user->rights->fournisseur->facture->creer || $user->rights->supplier_invoice->creer);
+				$permissiontoadd = ($user->hasRight('fournisseur', 'facture', 'creer') || $user->hasRight('supplier_invoice', 'creer'));
 
 				// Call action to build doc
 				$savobject = $object;
@@ -597,7 +601,7 @@ $formfile = new FormFile($db);
 
 
 $helpurl = 'EN:Module_Receptions|FR:Module_Receptions|ES:M&oacute;dulo_Receptiones';
-llxHeader('', $langs->trans('ListOfReceptions'), $helpurl, '', 0, 0, '', '', '', 'mod-reception page-list');
+llxHeader('', $langs->trans('ListOfReceptions'), $helpurl, '', 0, 0, '', '', '', 'bodyforlist mod-reception page-list');
 
 $sql = "SELECT e.rowid, e.ref, e.ref_supplier, e.date_reception as date_reception, e.date_delivery as delivery_date, l.date_delivery as date_reception2, e.fk_statut as status, e.billed,";
 $sql .= " s.rowid as socid, s.nom as name, s.town, s.zip, s.fk_pays, s.client, s.code_client,";
@@ -952,7 +956,7 @@ if (!empty($moreforfilter)) {
 	print '<div class="liste_titre liste_titre_bydiv centpercent">';
 	print $moreforfilter;
 	$parameters = array('type' => $type);
-	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 	print '</div>';
 }
@@ -1097,6 +1101,7 @@ if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
 	$totalarray['nbfield']++;
 }
 if (!empty($arrayfields['e.ref']['checked'])) {
+	// @phan-suppress-next-line PhanTypeInvalidDimOffset
 	print_liste_field_titre($arrayfields['e.ref']['label'], $_SERVER["PHP_SELF"], "e.ref", "", $param, '', $sortfield, $sortorder);
 	$totalarray['nbfield']++;
 }

@@ -46,6 +46,7 @@ if (isModEnabled('incoterm')) {
 // Get parameters
 $id = GETPOSTINT('id');
 $ref        = GETPOST('ref', 'alpha');
+
 $action = GETPOST('action', 'aZ09');
 $confirm    = GETPOST('confirm', 'alpha');
 $cancel     = GETPOST('cancel', 'aZ09');
@@ -153,7 +154,7 @@ if (empty($reshook)) {
 	include DOL_DOCUMENT_ROOT.'/core/actions_builddoc.inc.php';
 
 	if ($action == 'set_thirdparty' && $permissiontoadd) {
-		$object->setValueFrom('fk_soc', GETPOSTINT('fk_soc'), '', '', 'date', '', $user, $triggermodname);
+		$object->setValueFrom('fk_soc', GETPOSTINT('fk_soc'), '', null, 'date', '', $user, $triggermodname);
 	}
 	if ($action == 'classin' && $permissiontoadd) {
 		$object->setProject(GETPOSTINT('projectid'));
@@ -193,7 +194,7 @@ if (empty($reshook)) {
 			}
 		}
 
-		if ($prod->status_batch==2 && abs($qty)>1) {
+		if ($prod->status_batch == 2 && abs($qty) > 1) {
 			$error++;
 			setEventMessages($langs->transnoentities('TooManyQtyForSerialNumber', $prod->ref), null, 'errors');
 		}
@@ -251,12 +252,12 @@ if (empty($reshook)) {
 		} else {
 			if (!empty($batch)) {
 				$error++;
-				setEventMessages($langs->transnoentities('StockTransferNoBatchForProduct', $prod->getNomUrl()), '', 'errors');
+				setEventMessages($langs->transnoentities('StockTransferNoBatchForProduct', $prod->getNomUrl()), null, 'errors');
 				$action = 'editline';
 			}
 		}
 
-		if ($prod->status_batch==2 && abs($qty)>1) {
+		if ($prod->status_batch == 2 && abs($qty) > 1) {
 			$error++;
 			setEventMessages($langs->transnoentities('TooManyQtyForSerialNumber', $prod->ref), null, 'errors');
 			$action = 'editline';
@@ -547,10 +548,10 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	if ($action == 'deleteline') {
 		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id.'&lineid='.$lineid, $langs->trans('DeleteLine'), $langs->trans('ConfirmDeleteLine'), 'confirm_deleteline', '', 0, 1);
 	}
+	$formquestion = array();
 	// Clone confirmation
 	if ($action == 'clone') {
 		// Create an array for form
-		$formquestion = array();
 		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('ToClone'), $langs->trans('ConfirmCloneAsk', $object->ref), 'confirm_clone', $formquestion, 'yes', 1);
 	} elseif ($action == 'destock') { // Destock confirmation
 		// Create an array for form
@@ -630,7 +631,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	// Project
 	if (isModEnabled('project')) {
 		$langs->load("projects");
-		$morehtmlref .= '<br>';
+		$morehtmlref .= (empty($object->thirdparty) ? '' : '<br>');
 		if ($permissiontoadd) {
 			$morehtmlref .= img_picto($langs->trans("Project"), 'project', 'class="pictofixedwidth"');
 			if ($action != 'classify') {
@@ -782,8 +783,6 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 	$param = '';
 
-	$conf->global->MAIN_DISABLE_WRAPPING_ON_COLUMN_TITLE = true; // Full display needed to see all column title details
-
 	print '<tr class="liste_titre">';
 	print getTitleFieldOfList($langs->trans('ProductRef'), 0, $_SERVER["PHP_SELF"], '', $param, '', '', $sortfield, $sortorder, 'tagtd maxwidthonsmartphone ');
 	if (isModEnabled('productbatch')) {
@@ -844,21 +843,24 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			print '</td>';
 		}
 
-		print '<td>';
-
+		// Warehouse source
+		print '<td class="tdoverflowmax150">';
 		if ($action === 'editline' && $line->id == $lineid) {
 			print $formproduct->selectWarehouses($line->fk_warehouse_source, 'fk_warehouse_source', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp maxwidth200');
 		} else {
 			print $warehousestatics->getNomUrl(1);
 		}
 		print '</td>';
-		print '<td>';
+
+		// Warehouse target
+		print '<td class="tdoverflowmax150">';
 		if ($action === 'editline' && $line->id == $lineid) {
 			print $formproduct->selectWarehouses($line->fk_warehouse_destination, 'fk_warehouse_destination', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp maxwidth200');
 		} else {
 			print $warehousestatict->getNomUrl(1);
 		}
 		print '</td>';
+
 		if ($action === 'editline' && $line->id == $lineid) {
 			print '<td class="center"><input type="text" class="flat maxwidth50" name="qty" value="'.$line->qty.'"></td>';
 		} else {
@@ -877,9 +879,11 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		print '<td class="center">';
 		print price($line->pmp, 0, '', 1, -1, -1, $conf->currency);
 		print '</td>';
+
 		print '<td class="center">';
 		print price($line->pmp * $line->qty, 0, '', 1, -1, -1, $conf->currency);
 		print '</td>';
+
 		if (empty($object->status) && $permissiontoadd) {
 			if ($action === 'editline' && $line->id == $lineid) {
 				//print '<td class="right" colspan="2"><input type="submit" class="button" name="addline" value="' . dol_escape_htmltag($langs->trans('Save')) . '"></td>';
@@ -967,14 +971,14 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			}
 		}
 
-		// On vide le tableau pour qu'il se charge tout seul lors de l'appel à la fonction select_warehouses
+		// We clean array. It is filled automatically when calling function select_warehouses
 		$formproduct->cache_warehouses = array();
 		// In warehouse
 		print '<td>';
 		print $formproduct->selectWarehouses(empty($fk_warehouse_source) ? $object->fk_warehouse_source : $fk_warehouse_source, 'fk_warehouse_source', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp maxwidth200', $TExcludedWarehouseSource);
 		print '</td>';
 
-		// On vide le tableau pour qu'il se charge tout seul lors de l'appel à la fonction select_warehouses
+		// We clean array. It is filled automatically when calling function select_warehouses
 		$formproduct->cache_warehouses = array();
 		// Out warehouse
 		print '<td>';
@@ -983,18 +987,23 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 		// Qty
 		print '<td class="center"><input type="text" class="flat maxwidth50" name="qty" '.(!empty($error) ? 'value="'.$qty.'"' : '').'></td>';
+
 		// PMP
 		print '<td></td>';
 		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
 			// Unité
 			print '<td></td>';
 		}
+
 		// PMP * Qty
 		print '<td></td>';
+
 		// Button to add line
 		print '<td class="right" colspan="2"><input type="submit" class="button" name="addline" value="' . dol_escape_htmltag($langs->trans('Add')) . '"></td>';
+
 		// Grad and drop lines
 		print '<td></td>';
+
 		print '</tr>';
 	}
 
