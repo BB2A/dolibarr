@@ -14,14 +14,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Javascript code to activate drag and drop on lines
- * You can use this if you want to be able to drag and drop rows of a table.
+ */
+
+/**
+ * Javascript code to activate the drag and drop on lines
+ * You can use this if you want to be able to drag and drop rows of a HTML table.
  * You must add id="tablelines" on table level tag
- * and $object and $object->id is defined
- * and $object->fk_element or $fk_element is defined
- * and have ($nboflines or count($object->lines) or count($taskarray) > 0)
- * and have $table_element_line = 'tablename' or $object->table_element_line with line to move
+ * $object and $object->id must be defined
+ * $object->fk_element or $fk_element must be defined
+ * you must have ($nboflines or count($object->lines) or count($taskarray) > 0)
+ * you must have $table_element_line = 'tablename' or $object->table_element_line with line to move
  *
  */
 
@@ -38,7 +40,7 @@ if (empty($object) || !is_object($object)) {
 $id = $object->id;
 $fk_element = empty($object->fk_element) ? $fk_element : $object->fk_element;
 $table_element_line = (empty($table_element_line) ? $object->table_element_line : $table_element_line);
-$nboflines = (isset($object->lines) ?count($object->lines) : (isset($tasksarray) ?count($tasksarray) : (empty($nboflines) ? 0 : $nboflines)));
+$nboflines = (isset($object->lines) ? count($object->lines) : (isset($tasksarray) ? count($tasksarray) : (empty($nboflines) ? 0 : $nboflines)));
 $forcereloadpage = !getDolGlobalString('MAIN_FORCE_RELOAD_PAGE') ? 0 : 1;
 $tagidfortablednd = (empty($tagidfortablednd) ? 'tablelines' : $tagidfortablednd);
 $filepath = (empty($filepath) ? '' : $filepath);

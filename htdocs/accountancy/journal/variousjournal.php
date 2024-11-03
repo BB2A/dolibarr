@@ -1,5 +1,6 @@
 <?php
-/* Copyright (C) 2021-2023  Alexandre Spangaro  <aspangaro@easya.solutions>
+/* Copyright (C) 2021-2024	Alexandre Spangaro			<alexandre@inovea-conseil.com>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +31,7 @@ require_once DOL_DOCUMENT_ROOT.'/accountancy/class/accountingjournal.class.php';
 // Load translation files required by the page
 $langs->loadLangs(array("banks", "accountancy", "compta", "other", "errors"));
 
-$id_journal = GETPOST('id_journal', 'int');
+$id_journal = GETPOSTINT('id_journal');
 $action = GETPOST('action', 'aZ09');
 
 $date_startmonth = GETPOST('date_startmonth');
@@ -44,13 +45,13 @@ if ($in_bookkeeping == '') {
 	$in_bookkeeping = 'notyet';
 }
 
-// Get information of journal
+// Get information of a journal
 $object = new AccountingJournal($db);
 $result = $object->fetch($id_journal);
 if ($result > 0) {
 	$id_journal = $object->id;
 } elseif ($result < 0) {
-	dol_print_error('', $object->error, $object->errors);
+	dol_print_error(null, $object->error, $object->errors);
 } elseif ($result == 0) {
 	accessforbidden('ErrorRecordNotFound');
 }
@@ -61,10 +62,19 @@ $parameters = array();
 $date_start = dol_mktime(0, 0, 0, $date_startmonth, $date_startday, $date_startyear);
 $date_end = dol_mktime(23, 59, 59, $date_endmonth, $date_endday, $date_endyear);
 
-if (empty($date_startmonth) || empty($date_endmonth)) {
+$pastmonth = null;  // Initialise, could be unset
+$pastmonthyear = null;  // Initialise, could be unset
+
+if (empty($date_startmonth)) {
 	// Period by default on transfer
 	$dates = getDefaultDatesForTransfer();
 	$date_start = $dates['date_start'];
+	$pastmonthyear = $dates['pastmonthyear'];
+	$pastmonth = $dates['pastmonth'];
+}
+if (empty($date_endmonth)) {
+	// Period by default on transfer
+	$dates = getDefaultDatesForTransfer();
 	$date_end = $dates['date_end'];
 	$pastmonthyear = $dates['pastmonthyear'];
 	$pastmonth = $dates['pastmonth'];
@@ -76,8 +86,12 @@ if (!GETPOSTISSET('date_startmonth') && (empty($date_start) || empty($date_end))
 }
 
 $data_type = 'view';
-if ($action == 'writebookkeeping') $data_type = 'bookkeeping';
-if ($action == 'exportcsv') $data_type = 'csv';
+if ($action == 'writebookkeeping') {
+	$data_type = 'bookkeeping';
+}
+if ($action == 'exportcsv') {
+	$data_type = 'csv';
+}
 $journal_data = $object->getData($user, $data_type, $date_start, $date_end, $in_bookkeeping);
 if (!is_array($journal_data)) {
 	setEventMessages($object->error, $object->errors, 'errors');
@@ -90,7 +104,7 @@ if (!isModEnabled('accounting')) {
 if ($user->socid > 0) {
 	accessforbidden();
 }
-if (!$user->hasRight('accounting', 'mouvements', 'lire')) {
+if (!$user->hasRight('accounting', 'bind', 'write')) {
 	accessforbidden();
 }
 
@@ -104,7 +118,7 @@ $reshook = $hookmanager->executeHooks('doActions', $parameters, $user, $action);
 $reload = false;
 
 // Bookkeeping Write
-if ($action == 'writebookkeeping') {
+if ($action == 'writebookkeeping' && $user->hasRight('accounting', 'bind', 'write')) {
 	$error = 0;
 
 	$result = $object->writeIntoBookkeeping($user, $journal_data);
@@ -123,7 +137,7 @@ if ($action == 'writebookkeeping') {
 	}
 
 	$reload = true;
-} elseif ($action == 'exportcsv') {
+} elseif ($action == 'exportcsv' && $user->hasRight('accounting', 'bind', 'write')) {
 	// Export CSV
 	$result = $object->exportCsv($journal_data, $date_end);
 	if ($result < 0) {
@@ -186,8 +200,8 @@ if ($object->nature == 2) {
 }
 
 $title = $langs->trans("GenerationOfAccountingEntries") . ' - ' . $object->getNomUrl(0, 2, 1, '', 1);
-
-llxHeader('', dol_string_nohtmltag($title));
+$help_url = 'EN:Module_Double_Entry_Accounting|FR:Module_Comptabilit&eacute;_en_Partie_Double#G&eacute;n&eacute;ration_des_&eacute;critures_en_comptabilit&eacute;';
+llxHeader('', dol_string_nohtmltag($title), $help_url, '', 0, 0, '', '', '', 'mod-accountancy accountancy-generation page-variousjournal');
 
 $nom = $title;
 $nomlink = '';
@@ -247,7 +261,9 @@ if ($object->nature == 4) { // Bank journal
 			print '<br>' . img_warning() . ' ' . $langs->trans("TheJournalCodeIsNotDefinedOnSomeBankAccount");
 			print ' : ' . $langs->trans("AccountancyAreaDescBank", 9, '<strong>' . $langs->transnoentitiesnoconv("MenuAccountancy") . '-' . $langs->transnoentitiesnoconv("Setup") . "-" . $langs->transnoentitiesnoconv("BankAccounts") . '</strong>');
 		}
-	} else dol_print_error($db);
+	} else {
+		dol_print_error($db);
+	}
 }
 
 // Button to write into Ledger
@@ -288,8 +304,12 @@ print '
 	</script>';
 
 $object_label = $langs->trans("ObjectsRef");
-if ($object->nature == 2 || $object->nature == 3) $object_label = $langs->trans("InvoiceRef");
-if ($object->nature == 5) $object_label = $langs->trans("ExpenseReportRef");
+if ($object->nature == 2 || $object->nature == 3) {
+	$object_label = $langs->trans("InvoiceRef");
+}
+if ($object->nature == 5) {
+	$object_label = $langs->trans("ExpenseReportRef");
+}
 
 
 // Show result array
@@ -305,7 +325,9 @@ print '<td>' . $langs->trans("Piece") . ' (' . $object_label . ')</td>';
 print '<td>' . $langs->trans("AccountAccounting") . '</td>';
 print '<td>' . $langs->trans("SubledgerAccount") . '</td>';
 print '<td>' . $langs->trans("LabelOperation") . '</td>';
-if ($object->nature == 4) print '<td class="center">' . $langs->trans("PaymentMode") . '</td>'; // bank
+if ($object->nature == 4) {
+	print '<td class="center">' . $langs->trans("PaymentMode") . '</td>';
+} // bank
 print '<td class="right">' . $langs->trans("AccountingDebit") . '</td>';
 print '<td class="right">' . $langs->trans("AccountingCredit") . '</td>';
 print "</tr>\n";
@@ -320,7 +342,9 @@ if (is_array($journal_data) && !empty($journal_data)) {
 				print '<td>' . $line['account_accounting'] . '</td>';
 				print '<td>' . $line['subledger_account'] . '</td>';
 				print '<td>' . $line['label_operation'] . '</td>';
-				if ($object->nature == 4) print '<td class="center">' . $line['payment_mode'] . '</td>';
+				if ($object->nature == 4) {
+					print '<td class="center">' . $line['payment_mode'] . '</td>';
+				}
 				print '<td class="right nowraponall">' . $line['debit'] . '</td>';
 				print '<td class="right nowraponall">' . $line['credit'] . '</td>';
 				print '</tr>';

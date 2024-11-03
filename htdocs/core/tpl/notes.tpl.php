@@ -20,7 +20,7 @@
 // Protection to avoid direct call of template
 if (empty($object) || !is_object($object)) {
 	print "Error, template page can't be called as URL";
-	exit;
+	exit(1);
 }
 
 // $permissionnote 	must be defined by caller. For example $permissionnote=$user->rights->module->create
@@ -34,7 +34,7 @@ if ($module == "product") {
 }
 $colwidth = (isset($colwidth) ? $colwidth : (empty($cssclass) ? '25' : ''));
 // Set $permission from the $permissionnote var defined on calling page
-$permission = (isset($permissionnote) ? $permissionnote : (isset($permission) ? $permission : (isset($user->rights->$module->create) ? $user->rights->$module->create : (isset($user->rights->$module->creer) ? $user->rights->$module->creer : 0))));
+$permission = (isset($permissionnote) ? $permissionnote : (isset($permission) ? $permission : ($user->hasRight($module, 'create') ? $user->rights->$module->create : ($user->hasRight($module, 'creer') ? $user->rights->$module->creer : 0))));
 $moreparam = (isset($moreparam) ? $moreparam : '');
 $value_public = $object->note_public;
 $value_private = $object->note_private;
@@ -99,7 +99,7 @@ if ($module == 'propal') {
 } elseif ($module == 'user') {
 	$permission = $user->hasRight("user", "self", "write");
 }
-//else dol_print_error('','Bad value '.$module.' for param module');
+//else dol_print_error(null,'Bad value '.$module.' for param module');
 
 if (isModEnabled('fckeditor') && getDolGlobalString('FCKEDITOR_ENABLE_NOTE_PUBLIC')) {
 	$typeofdatapub = 'ckeditor:dolibarr_notes:100%:200::1:12:95%:0'; // Rem: This var is for all notes, not only thirdparties note.
@@ -117,7 +117,7 @@ print '<div class="tagtable border table-border tableforfield centpercent">'."\n
 print '<div class="tagtr table-border-row">'."\n";
 $editmode = (GETPOST('action', 'aZ09') == 'edit'.$note_public);
 print '<div class="tagtd tagtdnote tdtop'.($editmode ? '' : ' sensiblehtmlcontent').' table-key-border-col'.(empty($cssclass) ? '' : ' '.$cssclass).'"'.($colwidth ? ' style="width: '.$colwidth.'%"' : '').'>'."\n";
-print $form->editfieldkey("NotePublic", $note_public, $value_public, $object, $permission, $typeofdatapub, $moreparam, '', 0);
+print $form->editfieldkey((empty($textNotePub) ? "NotePublic" : $textNotePub), $note_public, $value_public, $object, $permission, $typeofdatapub, $moreparam, '', 0);
 print '</div>'."\n";
 print '<div class="tagtd wordbreak table-val-border-col'.($editmode ? '' : ' sensiblehtmlcontent').'">'."\n";
 print $form->editfieldval("NotePublic", $note_public, $value_public, $object, $permission, $typeofdatapub, '', null, null, $moreparam, 1)."\n";
@@ -128,7 +128,7 @@ if (empty($user->socid)) {
 	print '<div class="tagtr table-border-row">'."\n";
 	$editmode = (GETPOST('action', 'aZ09') == 'edit'.$note_private);
 	print '<div class="tagtd tagtdnote tdtop'.($editmode ? '' : ' sensiblehtmlcontent').' table-key-border-col'.(empty($cssclass) ? '' : ' '.$cssclass).'"'.($colwidth ? ' style="width: '.$colwidth.'%"' : '').'>'."\n";
-	print $form->editfieldkey("NotePrivate", $note_private, $value_private, $object, $permission, $typeofdatapriv, $moreparam, '', 0);
+	print $form->editfieldkey((empty($textNotePrive) ? "NotePrivate" : $textNotePrive), $note_private, $value_private, $object, $permission, $typeofdatapriv, $moreparam, '', 0);
 	print '</div>'."\n";
 	print '<div class="tagtd wordbreak table-val-border-col'.($editmode ? '' : ' sensiblehtmlcontent').'">'."\n";
 	print $form->editfieldval("NotePrivate", $note_private, $value_private, $object, $permission, $typeofdatapriv, '', null, null, $moreparam, 1);

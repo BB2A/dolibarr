@@ -20,7 +20,7 @@
  */
 
 /**
- *	\file       htdocs/admin/prelevement.php
+ *	\file       htdocs/admin/prelf
  *	\ingroup    prelevement
  *	\brief      Page to setup Withdrawals
  */
@@ -52,7 +52,7 @@ $error = 0;
 if ($action == "set") {
 	$db->begin();
 
-	$id = GETPOST('PRELEVEMENT_ID_BANKACCOUNT', 'int');
+	$id = GETPOSTINT('PRELEVEMENT_ID_BANKACCOUNT');
 	$account = new Account($db);
 	if ($account->fetch($id) > 0) {
 		$res = dolibarr_set_const($db, "PRELEVEMENT_ID_BANKACCOUNT", $id, 'chaine', 0, '', $conf->entity);
@@ -72,7 +72,7 @@ if ($action == "set") {
 		if (! $res > 0) $error++;
 		$res = dolibarr_set_const($db, "PRELEVEMENT_BIC", $account->bic,'chaine',0,'',$conf->entity);
 		if (! $res > 0) $error++;
-		$res = dolibarr_set_const($db, "PRELEVEMENT_RAISON_SOCIALE", $account->proprio,'chaine',0,'',$conf->entity);
+		$res = dolibarr_set_const($db, "PRELEVEMENT_RAISON_SOCIALE", $account->owner_address,'chaine',0,'',$conf->entity);
 		if (! $res > 0) $error++;
 		*/
 	} else {
@@ -118,7 +118,7 @@ if ($action == "set") {
 
 if ($action == "addnotif") {
 	$bon = new BonPrelevement($db);
-	$bon->addNotification($db, GETPOST('user', 'int'), $action);
+	$bon->addNotification($db, GETPOSTINT('user'), $action);
 
 	header("Location: ".$_SERVER["PHP_SELF"]);
 	exit;
@@ -126,7 +126,7 @@ if ($action == "addnotif") {
 
 if ($action == "deletenotif") {
 	$bon = new BonPrelevement($db);
-	$bon->deleteNotificationById(GETPOST('notif', 'int'));
+	$bon->deleteNotificationById(GETPOSTINT('notif'));
 
 	header("Location: ".$_SERVER["PHP_SELF"]);
 	exit;
@@ -141,7 +141,7 @@ $form = new Form($db);
 
 $dirmodels = array_merge(array('/'), (array) $conf->modules_parts['models']);
 
-llxHeader('', $langs->trans("WithdrawalsSetup"));
+llxHeader('', $langs->trans("WithdrawalsSetup"), '', '', 0, 0, '', '', '', 'mod-admin page-prelevement');
 
 $linkback = '<a href="'.DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1">'.$langs->trans("BackToModuleList").'</a>';
 

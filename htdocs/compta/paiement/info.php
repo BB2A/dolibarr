@@ -1,7 +1,7 @@
 <?php
-/* Copyright (C) 2004      Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2009 Laurent Destailleur  <eldy@users.sourceforge.net>
- * Copyright (C) 2013		Marcos García		<marcosgdf@gmail.com>
+/* Copyright (C) 2004       Rodolphe Quiedeville    <rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2009  Laurent Destailleur     <eldy@users.sourceforge.net>
+ * Copyright (C) 2013		Marcos García			<marcosgdf@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 /**
  *   	\file       htdocs/compta/paiement/info.php
- *		\ingroup    facture
+ *		\ingroup    invoice
  *		\brief      Onglet info d'un paiement
  */
 
@@ -32,15 +32,16 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/payments.lib.php';
 // Load translation files required by the page
 $langs->loadLangs(array('bills', 'companies'));
 
-$id = GETPOST('id', 'int');
+$id = GETPOSTINT('id');
 $ref = GETPOST('ref', 'alpha');
 $action = GETPOST('action', 'aZ09');
 $confirm = GETPOST('confirm', 'alpha');
+$socid = GETPOSTINT('socid');
 
 $object = new Paiement($db);
 
 // Load object
-include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be include, not include_once.
+include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be 'include', not 'include_once'.
 
 $result = restrictedArea($user, $object->element, $object->id, 'paiement', '');
 
@@ -66,6 +67,8 @@ if ($socid && $socid != $object->thirdparty->id) {
 /*
  * View
  */
+
+$form = new Form($db);	// Used in dol_banner_tab
 
 llxHeader('', $langs->trans("Payment"));
 
