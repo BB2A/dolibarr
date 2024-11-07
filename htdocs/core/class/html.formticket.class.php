@@ -815,7 +815,7 @@ class FormTicket
 					$captchaobj = new $classname($this->db, $conf, $langs, $user);
 
 					if (is_object($captchaobj) && method_exists($captchaobj, 'getCaptchaCodeForForm')) {
-						print $captchaobj->getCaptchaCodeForForm();
+						print $captchaobj->getCaptchaCodeForForm('');
 					} else {
 						print 'Error, the captcha handler '.get_class($captchaobj).' does not have any method getCaptchaCodeForForm()';
 					}
