@@ -811,6 +811,7 @@ class FormTicket
 				// Charging the numbering class
 				$classname = "modCaptcha".ucfirst($captcha);
 				if (class_exists($classname)) {
+					/** @var ModeleCaptcha $captchaobj */
 					$captchaobj = new $classname($this->db, $conf, $langs, $user);
 
 					if (is_object($captchaobj) && method_exists($captchaobj, 'getCaptchaCodeForForm')) {

@@ -107,7 +107,7 @@ class modCaptchaStandard extends ModeleCaptcha
 
 		// TODO Replace the a link with a post of form.
 
-		$out .= '<!-- Captcha -->
+		$out = '<!-- Captcha -->
 		<div class="trinputlogin">
 		<div class="tagtd tdinputlogin nowrap none valignmiddle">
 

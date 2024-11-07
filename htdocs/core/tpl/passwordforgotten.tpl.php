@@ -191,10 +191,11 @@ if (!empty($captcha)) {
 		// Charging the numbering class
 		$classname = "modCaptcha".ucfirst($captcha);
 		if (class_exists($classname)) {
+			/** @var ModeleCaptcha $captchaobj */
 			$captchaobj = new $classname($db, $conf, $langs, $user);
 
 			if (is_object($captchaobj) && method_exists($captchaobj, 'getCaptchaCodeForForm')) {
-				print $captchaobj->getCaptchaCodeForForm();
+				print $captchaobj->getCaptchaCodeForForm($php_self);
 			} else {
 				print 'Error, the captcha handler '.get_class($captchaobj).' does not have any method getCaptchaCodeForForm()';
 			}
