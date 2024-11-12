@@ -2721,11 +2721,11 @@ function pdfGetLineTotalDiscountAmount($object, $i, $outputlangs, $hidedetails =
 /**
  * Define signing position
  *
- * @param	real		$p				Number page to print sign
- * @param	real		$x				Posx to print sign
- * @param	real		$y				Posy to print sign
- * @param	real		$width			Width sign
- * @return	int							<0 if KO, >0 if OK
+ * @param	float		$p				Number page to print sign
+ * @param	float		$x				Posx to print sign
+ * @param	float		$y				Posy to print sign
+ * @param	float		$width			Width sign
+ * @return	int							Return <0 if KO, >0 if OK
  */
 function pdf_setPosSign($p, $x, $y, $width)
 {
