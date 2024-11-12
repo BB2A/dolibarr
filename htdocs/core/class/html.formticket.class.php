@@ -769,7 +769,8 @@ class FormTicket
 				$formcontract = new FormContract($this->db);
 				print '<tr><td><label for="contract"><span class="">'.$langs->trans("Contract").'</span></label></td><td>';
 				print img_picto('', 'contract', 'class="pictofixedwidth"');
-				print $formcontract->select_contract(-1, GETPOSTINT('contactid'), 'contractid', 0, 1, 1, 1);
+				// socid is for internal users null and not 0 or -1
+				print $formcontract->select_contract($user->socid ?? -1, GETPOSTINT('contactid'), 'contractid', 0, 1, 1, 1);
 				print '</td></tr>';
 			}
 		}
@@ -813,9 +814,10 @@ class FormTicket
 				if (class_exists($classname)) {
 					/** @var ModeleCaptcha $captchaobj */
 					$captchaobj = new $classname($this->db, $conf, $langs, $user);
+					'@phan-var-force ModeleCaptcha $captchaobj';
 
 					if (is_object($captchaobj) && method_exists($captchaobj, 'getCaptchaCodeForForm')) {
-						print $captchaobj->getCaptchaCodeForForm('');
+						print $captchaobj->getCaptchaCodeForForm('');  // @phan-suppress-current-line PhanUndeclaredMethod
 					} else {
 						print 'Error, the captcha handler '.get_class($captchaobj).' does not have any method getCaptchaCodeForForm()';
 					}

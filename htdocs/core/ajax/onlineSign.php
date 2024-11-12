@@ -941,7 +941,7 @@ echo $response;
  *
  * @param 	TCPDF 		$pdf		PDF handler
  * @param	Translate	$langs		Language
- * @param	array		$params		Array of params
+ * @param	array<string,int|float|string|mixed[]>		$params		Array of params
  * @return	void
  */
 function dolPrintSignatureImage(TCPDF $pdf, $langs, $params)

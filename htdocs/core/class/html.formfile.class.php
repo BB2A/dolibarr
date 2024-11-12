@@ -266,10 +266,17 @@ class FormFile
 
 		if (getDolGlobalString('MAIN_UPLOAD_DOC')) {
 			if ($perm) {
-				$menudolibarrsetupmax = $langs->transnoentitiesnoconv("Home").' - '.$langs->transnoentitiesnoconv("Setup").' - '.$langs->transnoentitiesnoconv("Security");
 				$langs->load('other');
+
+				$menudolibarrsetupmax = $langs->transnoentitiesnoconv("Home").' - '.$langs->transnoentitiesnoconv("Setup").' - '.$langs->transnoentitiesnoconv("Security");
+
+				$tooltiptext = $langs->trans("ThisLimitIsDefinedInSetupAt", $menudolibarrsetupmax, $max, $maxphptoshowparam, $maxphptoshow);
+				if (getDolGlobalString('MAIN_USE_FULL_TEXT_INDEXATION')) {
+					$tooltiptext .= '<br><br>Option to extract the file content in text to save it in database is ON <span class="opacitymedium">('.getDolGlobalString('MAIN_USE_FULL_TEXT_INDEXATION').')</span>';
+				}
+
 				$out .= ' ';
-				$out .= info_admin($langs->trans("ThisLimitIsDefinedInSetupAt", $menudolibarrsetupmax, $max, $maxphptoshowparam, $maxphptoshow), 1, 0, '1', 'classfortooltip');
+				$out .= info_admin($tooltiptext, 1, 0, '1', 'classfortooltip');
 			}
 		} else {
 			$out .= ' ('.$langs->trans("UploadDisabled").')';
@@ -278,7 +285,7 @@ class FormFile
 
 		if ($savingdocmask) {
 			//add a global variable for disable the auto renaming on upload
-			$rename = (!getDolGlobalString('MAIN_DOC_UPLOAD_NOT_RENAME_BY_DEFAULT') ? 'checked' : '');
+			$rename = getDolGlobalString('MAIN_DOC_UPLOAD_NOT_RENAME_BY_DEFAULT') ? '' : 'checked';
 
 			$out .= '<tr>';
 			if (!empty($options)) {
@@ -960,6 +967,7 @@ class FormFile
 				// Get list of files stored into database for same relative directory
 				if ($relativedir) {
 					completeFileArrayWithDatabaseInfo($file_list, $relativedir);
+					'@phan-var-force array<array{name:string,path:string,level1name:string,relativename:string,fullname:string,date:string,size:int,perm:int,type:string,position_name:string,cover:string,keywords:string,acl:string,rowid:int,label:string,share:string}> $file_list';
 
 					//var_dump($sortfield.' - '.$sortorder);
 					if (!empty($sortfield) && !empty($sortorder)) {	// If $sortfield is for example 'position_name', we will sort on the property 'position_name' (that is concat of position+name)
@@ -970,6 +978,9 @@ class FormFile
 				$i = 0;
 				foreach ($file_list as $file) {
 					$i++;
+					require_once DOL_DOCUMENT_ROOT . '/ecm/class/ecmfiles.class.php';
+					$ecmfile = new EcmFiles($this->db);
+					$ecmfile->fetch($file['rowid']);
 
 					// Define relative path for download link (depends on module)
 					$relativepath = (string) $file["name"]; // Cas general
@@ -996,21 +1007,22 @@ class FormFile
 					} else {
 						$out .= '<span class="spanoverflow">';
 					}
-					$out .= '<a class="documentdownload paddingright" ';
-					if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
-						$out .= 'target="_blank" ';
-					}
-					$out .= 'href="'.$documenturl.'?modulepart='.$modulepart.'&file='.urlencode($relativepath).($param ? '&'.$param : '').'"';
+					// $out .= '<a class="documentdownload paddingright" ';
+					// if (getDolGlobalInt('MAIN_DISABLE_FORCE_SAVEAS') == 2) {
+					// 	$out .= 'target="_blank" ';
+					// }
+					// $out .= 'href="'.$documenturl.'?modulepart='.$modulepart.'&file='.urlencode($relativepath).($param ? '&'.$param : '').'"';
 
-					$mime = dol_mimetype($relativepath, '', 0);
-					if (preg_match('/text/', $mime)) {
-						$out .= ' target="_blank" rel="noopener noreferrer"';
-					}
-					$out .= ' title="'.dol_escape_htmltag($file["name"]).'"';
-					$out .= '>';
-					$out .= img_mime($file["name"], $langs->trans("File").': '.$file["name"]);
-					$out .= dol_trunc($file["name"], 150);
-					$out .= '</a>';
+					// $mime = dol_mimetype($relativepath, '', 0);
+					// if (preg_match('/text/', $mime)) {
+					// 	$out .= ' target="_blank" rel="noopener noreferrer"';
+					// }
+					// $out .= ' title="'.dol_escape_htmltag($file["name"]).'"';
+					// $out .= '>';
+					// $out .= img_mime($file["name"], $langs->trans("File").': '.$file["name"]);
+					// $out .= dol_trunc($file["name"], 150);
+					// $out .= '</a>';
+					$out .= $ecmfile->getNomUrl(1, $modulepart, 0, 0, ' documentdownload');
 					$out .= '</span>'."\n";
 					$out .= $imgpreview;
 					$out .= '</td>';
@@ -1399,7 +1411,8 @@ class FormFile
 			// Show title of list of existing files
 			$morehtmlright = '';
 			if (!empty($moreoptions['showhideaddbutton']) && $conf->use_javascript_ajax) {
-				$morehtmlright .= dolGetButtonTitle($langs->trans('New'), '', 'fa fa-plus-circle', 'javascript:console.log("open add file form");jQuery(".divattachnewfile").toggle(); if (!jQuery(".divattachnewfile").is(":hidden")) { jQuery("input[type=\'file\']").click(); }', '', $permtoeditline);
+				$tmpurlforbutton = 'javascript:console.log("open add file form");jQuery(".divattachnewfile").toggle(); if (!jQuery(".divattachnewfile").is(":hidden")) { jQuery("input[type=\'file\']").click(); }';
+				$morehtmlright .= dolGetButtonTitle($langs->trans('New'), '', 'fa fa-plus-circle', $tmpurlforbutton, '', $permtoeditline);
 			}
 
 			if ((empty($useinecm) || $useinecm == 3 || $useinecm == 6) && $title != 'none') {
@@ -1441,6 +1454,7 @@ class FormFile
 			// Get list of files stored into database for same relative directory
 			if ($relativedir) {
 				completeFileArrayWithDatabaseInfo($filearray, $relativedir);
+				'@phan-var-force array<array{name:string,path:string,level1name:string,relativename:string,fullname:string,date:string,size:int,perm:int,type:string,position_name:string,cover:string,keywords:string,acl:string,rowid:int,label:string,share:string}> $filearray';
 
 				//var_dump($sortfield.' - '.$sortorder);
 				if ($sortfield && $sortorder) {	// If $sortfield is for example 'position_name', we will sort on the property 'position_name' (that is concat of position+name)
@@ -1712,7 +1726,7 @@ class FormFile
 
 							if ($permtoeditline) {
 								$paramsectiondir = (in_array($modulepart, array('medias', 'ecm')) ? '&section_dir='.urlencode($relativepath) : '');
-								print '<a class="editfielda reposition editfilelink" href="'.(($useinecm == 1 || $useinecm == 5) ? '#' : ($url.'?action=editfile&token='.newToken().'&urlfile='.urlencode($filepath).$paramsectiondir.$param)).'" rel="'.$filepath.'">'.img_edit('default', 0, 'class="paddingrightonly"').'</a>';
+								print '<a class="editfielda reposition editfilelink paddingright marginleftonly" href="'.(($useinecm == 1 || $useinecm == 5) ? '#' : ($url.'?action=editfile&token='.newToken().'&urlfile='.urlencode($filepath).$paramsectiondir.$param)).'" rel="'.$filepath.'">'.img_edit('default', 0, 'class="paddingrightonly"').'</a>';
 							}
 						}
 						// Output link to delete file
@@ -1727,7 +1741,8 @@ class FormFile
 							if (getDolGlobalString('MAIN_ECM_DISABLE_JS')) {
 								$useajax = 0;
 							}
-							print '<a href="'.((($useinecm && $useinecm != 3 && $useinecm != 6) && $useajax) ? '#' : ($url.'?action=deletefile&token='.newToken().'&urlfile='.urlencode($filepath).$param)).'" class="reposition deletefilelink" rel="'.$filepath.'">'.img_delete().'</a>';
+
+							print '<a href="'.((($useinecm && $useinecm != 3 && $useinecm != 6) && $useajax) ? '#' : ($url.'?action=deletefile&token='.newToken().'&urlfile='.urlencode($filepath).$param)).'" class="reposition deletefilelink paddingright marginleftonly" rel="'.$filepath.'">'.img_delete().'</a>';
 						}
 						print "</td>";
 
@@ -1959,6 +1974,7 @@ class FormFile
 		$relativepathfromroot = preg_replace('/'.preg_quote(DOL_DATA_ROOT.'/', '/').'/', '', $upload_dir);
 		if ($relativepathfromroot) {
 			completeFileArrayWithDatabaseInfo($filearray, $relativepathfromroot.'/%');
+			'@phan-var-force array<array{name:string,path:string,level1name:string,relativename:string,fullname:string,date:string,size:int,perm:int,type:string,position_name:string,cover:string,keywords:string,acl:string,rowid:int,label:string,share:string}> $filearray';
 
 			//var_dump($sortfield.' - '.$sortorder);
 			if ($sortfield && $sortorder) {	// If $sortfield is for example 'position_name', we will sort on the property 'position_name' (that is concat of position+name)

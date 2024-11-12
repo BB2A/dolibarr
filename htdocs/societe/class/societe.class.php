@@ -854,9 +854,14 @@ class Societe extends CommonObject
 
 	// Multicurrency
 	/**
-	 * @var int ID
+	 * @var int Multicurrency ID
 	 */
 	public $fk_multicurrency;
+
+	/**
+	 * @var string Multicurrency code
+	 */
+	public $multicurrency_code;
 
 	// Warehouse
 	/**
@@ -865,9 +870,10 @@ class Societe extends CommonObject
 	public $fk_warehouse;
 
 	/**
-	 * @var string Multicurrency code
+	 * @var string	Name of file with terms of sales
 	 */
-	public $multicurrency_code;
+	public $termsofsale;
+
 
 	// Fields loaded by fetchPartnerships()
 
@@ -3521,6 +3527,32 @@ class Societe extends CommonObject
 			return $rib_array;
 		}
 	}
+
+	/**
+	 * @return int
+	 */
+	public function getDefaultRib()
+	{
+		// phpcs:enable
+		require_once DOL_DOCUMENT_ROOT.'/societe/class/companybankaccount.class.php';
+		$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."societe_rib WHERE type = 'ban' AND default_rib = 1 AND fk_soc = ". (int) $this->id;
+		$resql = $this->db->query($sql);
+		if (!$resql) {
+			$this->error = $this->db->lasterror();
+			$this->errors[] = $this->db->lasterror();
+			return -1;
+		} else {
+			$num_rows = $this->db->num_rows($resql);
+			$rib_array = array();
+			if ($num_rows) {
+				while ($obj = $this->db->fetch_object($resql)) {
+					return $obj->rowid;
+				}
+			}
+			return 0;
+		}
+	}
+
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
